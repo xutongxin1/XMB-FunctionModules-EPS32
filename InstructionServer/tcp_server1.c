@@ -39,6 +39,8 @@ static const char *TAG = "example";
 TaskHandle_t kDAPTaskHandle1 = NULL;
 int kRestartDAPHandle1 = NO_SIGNAL;
 
+
+
 uint8_t kState1 = ACCEPTING;
 volatile int kSock1 = -1;
 int written = 0;
