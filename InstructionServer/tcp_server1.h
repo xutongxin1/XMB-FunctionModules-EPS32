@@ -16,7 +16,20 @@ typedef struct
 
 }Uart_parameter_Analysis;
 
+enum state_t
+{
+    ACCEPTING,
+    ATTACHING,
+    EMULATING,
+    EL_DATA_PHASE
+};
 
+enum reset_handle_t
+{
+    NO_SIGNAL = 0,
+    RESET_HANDLE = 1,
+    DELETE_HANDLE = 2,
+};///////////
 
 void tcp_server_task1(void *pvParameters);
 void Heart_beat(unsigned int len,char *rx_buffer);
@@ -24,9 +37,9 @@ void commandJsonAnalysis(unsigned int len, void *rx_buffer,int ksock);
 void attach_status(char str_attach);
 void nvs_flash_write(char modeNumber,int listen_sock);
 void nvs_flash_read(int listen_sock);
-int UartC1ParameterAnalysis(char *attachRxBuffer,Uart_parameter_Analysis *t);
-int UartC2ParameterMode(char *attachRxBuffer,Uart_parameter_Analysis *t);
-int UartC3ParameterAnalysis(char *attachRxBuffer,Uart_parameter_Analysis *t);
+int UartC1ParameterAnalysis(void* attachRxBuffer,Uart_parameter_Analysis *t);
+int UartC2ParameterMode(void* attachRxBuffer,Uart_parameter_Analysis *t);
+int UartC3ParameterAnalysis(void* attachRxBuffer,Uart_parameter_Analysis *t);
 enum Command_mode {
     DAP=1,
     UART,
