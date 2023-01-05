@@ -2,11 +2,9 @@
 #include <stdint.h>
 #include <sys/param.h>
 
-#include "main/wifi_configuration.h"
-#include "main/usbip_server.h"
-#include "main/DAP_handle.h"
+#include "InstructionServer/wifi_configuration.h"
 
-#include "components/elaphureLink/elaphureLink_protocol.h"
+#include "other/elaphureLink_protocol.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -25,7 +23,7 @@
 
 #include "cJSON.h"
 #include "tcp_server1.h"
-#include "Handle.h"
+#include "SwitchMode/Handle.h"
 
 static int Flag1 = 0;               //是否收到COM心跳包
 const char HeartRet[5] = "OK!\r\n"; //心跳包发送
