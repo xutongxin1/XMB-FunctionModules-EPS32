@@ -36,8 +36,8 @@ Uart_parameter_Analysis c2;
 Uart_parameter_Analysis c3;
 static const char *TAG = "example";
 
-extern TaskHandle_t kDAPTaskHandle1;
-extern int kRestartDAPHandle1;
+TaskHandle_t kDAPTaskHandle1 = NULL;
+int kRestartDAPHandle1 = NO_SIGNAL;
 
 uint8_t kState1 = ACCEPTING;
 volatile int kSock1 = -1;
