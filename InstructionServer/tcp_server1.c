@@ -281,10 +281,11 @@ void commandJsonAnalysis(unsigned int len, void *rx_buffer, int ksock)
                 
                 if(str_command==220)
                 {
-                    printf("\nc1:\n");
+
                     UartC1ParameterAnalysis(pattach,&c1);
                     UartC2ParameterMode(pattach,&c2);
                     UartC3ParameterAnalysis(pattach,&c3);
+                    
                 }
                 // if(str_command==101) {
                 //     str_attach = (*strattach);
@@ -308,14 +309,7 @@ int UartC1ParameterAnalysis(void *attachRxBuffer,Uart_parameter_Analysis *t)
     //char *testdata= attachRxBuffer;
     //首先整体判断是否为一个json格式的数据
     cJSON *pc1 = cJSON_GetObjectItem(attachRxBuffer, "c1"); // 解析c1字段内容
-    printf("\nIn UartC1ParameterAnalysis\n");
-    
-    printf("test\n");
-    //printf("\nstr_c1=%s\n",pC1);
-    //是否为json格式数据
-     if (attachRxBuffer != NULL)
-     {
-         printf("\nlife1\n");
+    printf("\nc1:\n");
          //是否指令为空
          if (pc1 != NULL)
          {
@@ -337,22 +331,19 @@ int UartC1ParameterAnalysis(void *attachRxBuffer,Uart_parameter_Analysis *t)
             item=cJSON_GetObjectItem(pc1,"stop");
             t->stop=item->valueint;
             printf("stop = %d\n",t->stop);
-
             return 0;
          }
-     }
+     
     return -1;
 }
 
-int UartC2ParameterMode(void * attachRxBuffer,Uart_parameter_Analysis *t)
+int UartC2ParameterMode(void *attachRxBuffer,Uart_parameter_Analysis *t)
 {
     int strC2=0;
     //首先整体判断是否为一个json格式的数据
     cJSON *pc2 = cJSON_GetObjectItem(attachRxBuffer, "c2"); // 解析c1字段内容
-    // printf("\nIn analysis\n");
+    printf("\nc2:\n");
     //是否为json格式数据
-    if (attachRxBuffer != NULL)
-    {
         // printf("\nlife1\n");
         //是否指令为空
         if (pc2 != NULL)
@@ -360,12 +351,10 @@ int UartC2ParameterMode(void * attachRxBuffer,Uart_parameter_Analysis *t)
             cJSON * item;
             item=cJSON_GetObjectItem(pc2,"mode");
             strC2 = item->valueint;
-            t->mode=strC2;
             printf("mode=%d\n",strC2);
-
-            return t->mode;
+            return strC2;
         }
-    }
+    
     return -1;
 }
 
@@ -375,11 +364,7 @@ int UartC3ParameterAnalysis(void *attachRxBuffer,Uart_parameter_Analysis *t)
     char str_C3; 
     //首先整体判断是否为一个json格式的数据
     cJSON *pc3 = cJSON_GetObjectItem(attachRxBuffer, "c3"); // 解析c1字段内容
-    // printf("\nIn analysis\n");
-    //是否为json格式数据
-    if (attachRxBuffer != NULL)
-    {
-        // printf("\nlife1\n");
+    printf("\nc3:\n");
         //是否指令为空
         if (pc3 != NULL)
         {
@@ -392,19 +377,19 @@ int UartC3ParameterAnalysis(void *attachRxBuffer,Uart_parameter_Analysis *t)
             t->band = strC3;
             printf("band = %s\n",t->band);
             item=cJSON_GetObjectItem(pc3,"parity");
+            if(item!=NULL){
             strC3 = item->valuestring;
             t->parity=strC3;
-            printf("\parity = %s\n",t->parity);
+            printf("parity = %s\n",t->parity);
+            }
             item=cJSON_GetObjectItem(pc3,"data");
             t->data=item->valueint;
             printf("data = %d\n",t->data);
             item=cJSON_GetObjectItem(pc3,"stop");
             t->stop=item->valueint;
             printf("stop = %d\n",t->stop);
-
             return 0;
         }
-    }
     return -1;
 }
 

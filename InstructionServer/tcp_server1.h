@@ -29,11 +29,7 @@ enum reset_handle_t
     NO_SIGNAL = 0,
     RESET_HANDLE = 1,
     DELETE_HANDLE = 2,
-<<<<<<< HEAD
-};
-=======
 };///////////
->>>>>>> main
 
 void tcp_server_task1(void *pvParameters);
 void Heart_beat(unsigned int len,char *rx_buffer);
