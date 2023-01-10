@@ -81,10 +81,10 @@ void tcp_server_task1(void *pvParameters)
         int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
         if (listen_sock < 0)
         {
-            os_printf("Unable to create socket: errno %d\r\n", errno);
+            printf("Unable to create socket: errno %d\r\n", errno);
             break;
         }
-        os_printf("Socket created\r\n");
+        printf("Socket created\r\n");
 
         setsockopt(listen_sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&on, sizeof(on));
         setsockopt(listen_sock, IPPROTO_TCP, TCP_NODELAY, (void *)&on, sizeof(on));
@@ -92,18 +92,18 @@ void tcp_server_task1(void *pvParameters)
         int err = bind(listen_sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
         if (err != 0)
         {
-            os_printf("Socket unable to bind: errno %d\r\n", errno);
+            printf("Socket unable to bind: errno %d\r\n", errno);
             break;
         }
-        os_printf("Socket binded\r\n");
+        printf("Socket binded\r\n");
 
         err = listen(listen_sock, 1);
         if (err != 0)
         {
-            os_printf("Error occured during listen: errno %d\r\n", errno);
+            printf("Error occured during listen: errno %d\r\n", errno);
             break;
         }
-        os_printf("Socket listening\r\n");
+        printf("Socket listening\r\n");
 
 #ifdef CONFIG_EXAMPLE_IPV6
         struct sockaddr_in6 sourceAddr; // Large enough for both IPv4 or IPv6
@@ -117,7 +117,7 @@ void tcp_server_task1(void *pvParameters)
             kSock1 = accept(listen_sock, (struct sockaddr *)&sourceAddr, &addrLen);
             if (kSock1 < 0)
             {
-                os_printf(" Unable to accept connection: errno %d\r\n", errno);
+                printf(" Unable to accept connection: errno %d\r\n", errno);
                 break;
             }
             // printf("1");
@@ -126,7 +126,7 @@ void tcp_server_task1(void *pvParameters)
             setsockopt(kSock1, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
             setsockopt(kSock1, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
             setsockopt(kSock1, IPPROTO_TCP, TCP_NODELAY, (void *)&on, sizeof(on));
-            os_printf("Socket accepted %d\r\n", kSock1);
+            printf("Socket accepted %d\r\n", kSock1);
 
             nvs_flash_read(listen_sock);
             
@@ -139,14 +139,14 @@ void tcp_server_task1(void *pvParameters)
                 // // Error occured during receiving
                 // if (len < 0)
                 // {
-                //     os_printf("recv failed: errno %d\r\n", errno);
+                //     printf("recv failed: errno %d\r\n", errno);
                 //     break;
                 // }
                 // // Connection closed
                 // else 
                 if (len == 0)
                 {
-                    os_printf("Connection closed\r\n");
+                    printf("Connection closed\r\n");
                     break;
                 }
                 // Data received
@@ -207,14 +207,14 @@ void tcp_server_task1(void *pvParameters)
                         // attach(tcp_rx_buffer, len);
                         break;
                     default:
-                        os_printf("unkonw kstate!\r\n");
+                        printf("unkonw kstate!\r\n");
                     }
                 }
             }
             // kState = ACCEPTING;
             if (kSock1 != -1)
             {
-                os_printf("Shutting down socket and restarting...\r\n");
+                printf("Shutting down socket and restarting...\r\n");
                 // shutdown(kSock, 0);
                 close(kSock1);
                 if (kState1 == EMULATING || kState1 == EL_DATA_PHASE)
@@ -274,18 +274,17 @@ void commandJsonAnalysis(unsigned int len, void *rx_buffer, int ksock)
             if (pattach != NULL)
             {
                 
-                strattach = pattach->valuestring;
                 str_command = pcommand->valueint;
                 printf("\nstr_command : %d",str_command);
                 //printf("\nthe data is %c", *strattach);
                 // printf("\nfree\n");
-                cJSON_Delete(pJsonRoot);
+                
                 if(str_command==220)
                 {
                     printf("\nc1:\n");
-                    UartC1ParameterAnalysis(strattach,&c1);
-                    UartC2ParameterMode(strattach,&c2);
-                    UartC3ParameterAnalysis(strattach,&c3);
+                    UartC1ParameterAnalysis(pattach,&c1);
+                    UartC2ParameterMode(pattach,&c2);
+                    UartC3ParameterAnalysis(pattach,&c3);
                 }
                 // if(str_command==101) {
                 //     str_attach = (*strattach);
@@ -294,25 +293,27 @@ void commandJsonAnalysis(unsigned int len, void *rx_buffer, int ksock)
                 //     }
                 // }
                 Flag3 = 0;
+                cJSON_Delete(pJsonRoot);
             }
         }
     }
 }
 
-int UartC1ParameterAnalysis(char *attachRxBuffer,Uart_parameter_Analysis *t)
+int UartC1ParameterAnalysis(void *attachRxBuffer,Uart_parameter_Analysis *t)
 {
     char *strC1=NULL;
     //char pC1[1500];
     //*pC1=*attachRxBuffer;
-    char str_C1; 
+    char str_C1='0';
+    //char *testdata= attachRxBuffer;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pJsonRoot = cJSON_Parse(attachRxBuffer);
-    cJSON *pc1 = cJSON_GetObjectItem(pJsonRoot, "c1"); // 解析c1字段内容
+    cJSON *pc1 = cJSON_GetObjectItem(attachRxBuffer, "c1"); // 解析c1字段内容
     printf("\nIn UartC1ParameterAnalysis\n");
     
+    printf("test\n");
     //printf("\nstr_c1=%s\n",pC1);
     //是否为json格式数据
-     if (pJsonRoot != NULL)
+     if (attachRxBuffer != NULL)
      {
          printf("\nlife1\n");
          //是否指令为空
@@ -329,30 +330,28 @@ int UartC1ParameterAnalysis(char *attachRxBuffer,Uart_parameter_Analysis *t)
             item=cJSON_GetObjectItem(pc1,"parity");
             strC1 = item->valuestring;
             t->parity=strC1;
-            printf("          parity = %s\n",t->parity);
+            printf("parity = %s\n",t->parity);
             item=cJSON_GetObjectItem(pc1,"data");
             t->data=item->valueint;
-            printf("          data = %d\n",t->data);
+            printf("data = %d\n",t->data);
             item=cJSON_GetObjectItem(pc1,"stop");
             t->stop=item->valueint;
-            printf("          stop = %d\n",t->stop);
-            cJSON_Delete(pJsonRoot);
-            while(1){};
+            printf("stop = %d\n",t->stop);
+
             return 0;
          }
      }
     return -1;
 }
 
-int UartC2ParameterMode(char *attachRxBuffer,Uart_parameter_Analysis *t)
+int UartC2ParameterMode(void * attachRxBuffer,Uart_parameter_Analysis *t)
 {
     int strC2=0;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pJsonRoot = cJSON_Parse(attachRxBuffer);
-    cJSON *pc2 = cJSON_GetObjectItem(pJsonRoot, "c2"); // 解析c1字段内容
+    cJSON *pc2 = cJSON_GetObjectItem(attachRxBuffer, "c2"); // 解析c1字段内容
     // printf("\nIn analysis\n");
     //是否为json格式数据
-    if (pJsonRoot != NULL)
+    if (attachRxBuffer != NULL)
     {
         // printf("\nlife1\n");
         //是否指令为空
@@ -363,23 +362,22 @@ int UartC2ParameterMode(char *attachRxBuffer,Uart_parameter_Analysis *t)
             strC2 = item->valueint;
             t->mode=strC2;
             printf("mode=%d\n",strC2);
-            cJSON_Delete(pJsonRoot);
+
             return t->mode;
         }
     }
     return -1;
 }
 
-int UartC3ParameterAnalysis(char *attachRxBuffer,Uart_parameter_Analysis *t)
+int UartC3ParameterAnalysis(void *attachRxBuffer,Uart_parameter_Analysis *t)
 {
     char *strC3=NULL;
     char str_C3; 
     //首先整体判断是否为一个json格式的数据
-    cJSON *pJsonRoot = cJSON_Parse(attachRxBuffer);
-    cJSON *pc3 = cJSON_GetObjectItem(pJsonRoot, "c3"); // 解析c1字段内容
+    cJSON *pc3 = cJSON_GetObjectItem(attachRxBuffer, "c3"); // 解析c1字段内容
     // printf("\nIn analysis\n");
     //是否为json格式数据
-    if (pJsonRoot != NULL)
+    if (attachRxBuffer != NULL)
     {
         // printf("\nlife1\n");
         //是否指令为空
@@ -396,14 +394,14 @@ int UartC3ParameterAnalysis(char *attachRxBuffer,Uart_parameter_Analysis *t)
             item=cJSON_GetObjectItem(pc3,"parity");
             strC3 = item->valuestring;
             t->parity=strC3;
-            printf("          parity = %s\n",t->parity);
+            printf("\parity = %s\n",t->parity);
             item=cJSON_GetObjectItem(pc3,"data");
             t->data=item->valueint;
-            printf("          data = %d\n",t->data);
+            printf("data = %d\n",t->data);
             item=cJSON_GetObjectItem(pc3,"stop");
             t->stop=item->valueint;
-            printf("          stop = %d\n",t->stop);
-            cJSON_Delete(pJsonRoot);
+            printf("stop = %d\n",t->stop);
+
             return 0;
         }
     }
