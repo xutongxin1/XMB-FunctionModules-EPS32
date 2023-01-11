@@ -31,9 +31,9 @@ static int Flag3 = 0;               //是否发送OK心跳包
 int Command_Flag = 0;               //指令模式
 int sendFlag = 0;
 char modeRet[5] = "RF0\r\n"; //心跳包发送
-Uart_parameter_Analysis c1;
-Uart_parameter_Analysis c2;
-Uart_parameter_Analysis c3;
+uart_configrantion c1;
+uart_configrantion c2;
+uart_configrantion c3;
 static const char *TAG = "example";
 
 TaskHandle_t kDAPTaskHandle1 = NULL;
@@ -119,7 +119,9 @@ void tcp_server_task_1(void *pvParameters) {
             setsockopt(kSock1, IPPROTO_TCP, TCP_NODELAY, (void *) &on, sizeof(on));
             printf("Socket accepted %d\r\n", kSock1);
 
-            nvs_flash_read(listen_sock);
+            if(nvs_flash_read(listen_sock)){
+            attach_status(Command_Flag);
+            }
 
             while (1) {
                 char tcp_rx_buffer[1500] = {0};
@@ -162,9 +164,9 @@ void tcp_server_task_1(void *pvParameters) {
                             heart_beat(len, tcp_rx_buffer); //当COM心跳成功发送，则置Falg为1
                             printf("Flag1=%d,Flag3=%d\n", Flag1, Flag3);
 
-                            if (Flag3 == 1 && Flag1 == 1) {
+                            if (Flag3 == 1 && Flag1 == 1 &&tcp_rx_buffer[0]=='{') {
                                 printf("\nCommand analysis!!!\n");
-                                printf("the data is %s\n", tcp_rx_buffer);
+                                //printf("the data is %s\n", tcp_rx_buffer);
                                 //printf("Flag1=%d,Flag3=%d\n", Flag1, Flag3);
                                 Flag1 = 0;
                                 command_json_analysis(len, tcp_rx_buffer, kSock1);
@@ -258,9 +260,10 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                 {
 
                     uart_c_1_parameter_analysis(pattach,&c1);
-                    uart_c_2_parameter_mode(pattach,&c2);
                     uart_c_3_parameter_analysis(pattach,&c3);
+                    uart_c_2_parameter_mode(pattach,&c2);
                     
+                    cJSON_Delete(pJsonRoot);
                 }
                 if (str_command == 101) {
                     strattach = pattach->valuestring;
@@ -297,23 +300,29 @@ int uart_c_1_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis 
          if (pc1 != NULL)
          {
             cJSON * item;
+
             item=cJSON_GetObjectItem(pc1,"mode");
-            t->mode = item->valueint;
-            printf("mode = %d\n",t->mode);
+            t->pin.MODE = item->valueint;
+            printf("mode = %d\n",t->pin.MODE );
+
             item=cJSON_GetObjectItem(pc1,"band");
-            str_c_1 = item->valuestring;
-            t->band = str_c_1;
-            printf("band = %s\n",t->band);
+            t->uart_config.baud_rate = item->valueint;
+            printf("band = %d\n",t->uart_config.baud_rate);
+
             item=cJSON_GetObjectItem(pc1,"parity");
-            str_c_1 = item->valuestring;
-            t->parity=str_c_1;
-            printf("parity = %s\n",t->parity);
+            t->uart_config.parity = item->valueint;
+            printf("parity = %d\n",t->uart_config.parity);
+
             item=cJSON_GetObjectItem(pc1,"data");
-            t->data=item->valueint;
-            printf("data = %d\n",t->data);
+            t->uart_config.data_bits = (item->valueint)-5;
+            printf("data = %d\n",t->uart_config.data_bits);
+
             item=cJSON_GetObjectItem(pc1,"stop");
-            t->stop=item->valueint;
+            t->uart_config.stop_bits=item->valueint;
             printf("stop = %d\n",t->stop);
+
+            t->pin.CH=1;
+
             return 0;
          }
      
@@ -333,9 +342,29 @@ int uart_c_2_parameter_mode(void *attach_rx_buffer,Uart_parameter_Analysis *t)
         {
             cJSON * item;
             item=cJSON_GetObjectItem(pc2,"mode");
-            strC2 = item->valueint;
-            printf("mode=%d\n",strC2);
-            return strC2;
+            t->pin.MODE = item->valueint;
+            printf("mode=%d\n",t->pin.MODE);
+            t->pin.CH=2;
+            switch (t->mode)
+            {
+            case 5:
+            t->uart_config.baud_rate = c1->uart_config.baud_rate;
+            t->uart_config.parity = c1->uart_config.parity;
+            t->uart_config.data_bits = c1->uart_config.data_bits;
+            t->uart_config.stop_bits = c1->uart_config.stop_bits;
+            break;
+
+            case 6:
+            t->uart_config.baud_rate = c3->uart_config.baud_rate ;
+            t->uart_config.parity = c3->uart_config.parity;
+            t->uart_config.data_bits = c3->uart_config.data_bits;
+            t->uart_config.stop_bits = c3->uart_config.stop_bits;
+            break;
+
+            default:
+                break;
+            }
+            return 0;
         }
     
     return -1;
@@ -350,23 +379,29 @@ int uart_c_3_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis 
         if (pc3 != NULL)
         {
             cJSON * item;
+
             item=cJSON_GetObjectItem(pc3,"mode");
-            t->mode = item->valueint;
+            t->pin.MODE = item->valueint;
             printf("mode = %d\n",t->mode);
+
             item=cJSON_GetObjectItem(pc3,"band");
-            str_c_3 = item->valuestring;
-            t->band = str_c_3;
-            printf("band = %s\n",t->band);
+            t->uart_config.baud_rate = item->valueint;
+            printf("band = %d\n",t->uart_config.baud_rate);
+            
             item=cJSON_GetObjectItem(pc3,"parity");
-            str_c_3 = item->valuestring;
-            t->parity=str_c_3;
-            printf("parity = %s\n",t->parity);
+            t->uart_config.parity = item->valueint;
+            printf("parity = %s\n",t->uart_config.parity);
+            
             item=cJSON_GetObjectItem(pc3,"data");
-            t->data=item->valueint;
-            printf("data = %d\n",t->data);
+            t->uart_config.data_bits = item->valueint;
+            printf("data = %d\n",t->uart_config.data_bits);
+            
             item=cJSON_GetObjectItem(pc3,"stop");
-            t->stop=item->valueint;
-            printf("stop = %d\n",t->stop);
+            t->uart_config.stop_bits = item->valueint;
+            printf("stop = %d\n",t->uart_config.stop_bits);
+            
+            t->pin.CH=3;
+
             return 0;
         }
     return -1;
@@ -445,7 +480,7 @@ void nvs_flash_write(char mode_number, int listen_sock) {
     // }
 }
 
-void nvs_flash_read(int listen_sock) {
+int nvs_flash_read(int listen_sock){
 
 
     // Initialize NVS
@@ -500,7 +535,9 @@ void nvs_flash_read(int listen_sock) {
             } while (sendFlag < 0);
             Command_Flag = Command_Flag + '0';
             //printf("\nRF send finish\n");
-            attach_status(Command_Flag);
+            return 1;
         }
     }
+    nvs_close(my_handle);
+    return 0;
 }
