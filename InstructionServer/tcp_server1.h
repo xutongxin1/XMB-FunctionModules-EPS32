@@ -22,10 +22,11 @@ enum state_t {
   EL_DATA_PHASE
 };
 
-enum reset_handle_t {
-  NO_SIGNAL = 0,
-  RESET_HANDLE = 1,
-  DELETE_HANDLE = 2,
+enum reset_handle_t
+{
+    NO_SIGNAL = 0,
+    RESET_HANDLE = 1,
+    DELETE_HANDLE = 2,
 };///////////
 
 void tcp_server_task_1(void *pvParameters);
