@@ -253,13 +253,14 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                 printf("\nstr_command : %d", str_command);
                 //printf("\nthe data is %c", *strattach);
                 // printf("\nfree\n");
+                
+                if(str_command==220)
+                {
 
-                if (str_command == 220) {
-
-                    uart_c_1_parameter_analysis(pattach, &c1);
-                    uart_c_2_parameter_mode(pattach, &c2);
-                    uart_c_3_parameter_analysis(pattach, &c3);
-                    cJSON_Delete(pJsonRoot);
+                    uart_c_1_parameter_analysis(pattach,&c1);
+                    uart_c_2_parameter_mode(pattach,&c2);
+                    uart_c_3_parameter_analysis(pattach,&c3);
+                    
                 }
                 if (str_command == 101) {
                     strattach = pattach->valuestring;
@@ -290,82 +291,84 @@ int uart_c_1_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis 
     char str_C1 = '0';
     //char *testdata= attach_rx_buffer;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pc_1 = cJSON_GetObjectItem(attach_rx_buffer, "c1"); // 解析c1字段内容
+    cJSON *pc1 = cJSON_GetObjectItem(attach_rx_buffer, "c1"); // 解析c1字段内容
     printf("\nc1:\n");
-    //是否指令为空
-    if (pc_1 != NULL) {
-        cJSON *item;
-        item = cJSON_GetObjectItem(pc_1, "mode");
-        t->mode = item->valueint;
-        printf("mode = %d\n", t->mode);
-        item = cJSON_GetObjectItem(pc_1, "band");
-        str_c_1 = item->valuestring;
-        t->band = str_c_1;
-        printf("band = %s\n", t->band);
-        item = cJSON_GetObjectItem(pc_1, "parity");
-        str_c_1 = item->valuestring;
-        t->parity = str_c_1;
-        printf("parity = %s\n", t->parity);
-        item = cJSON_GetObjectItem(pc_1, "data");
-        t->data = item->valueint;
-        printf("data = %d\n", t->data);
-        item = cJSON_GetObjectItem(pc_1, "stop");
-        t->stop = item->valueint;
-        printf("stop = %d\n", t->stop);
-        return 0;
-    }
-
+         //是否指令为空
+         if (pc1 != NULL)
+         {
+            cJSON * item;
+            item=cJSON_GetObjectItem(pc1,"mode");
+            t->mode = item->valueint;
+            printf("mode = %d\n",t->mode);
+            item=cJSON_GetObjectItem(pc1,"band");
+            str_c_1 = item->valuestring;
+            t->band = str_c_1;
+            printf("band = %s\n",t->band);
+            item=cJSON_GetObjectItem(pc1,"parity");
+            str_c_1 = item->valuestring;
+            t->parity=str_c_1;
+            printf("parity = %s\n",t->parity);
+            item=cJSON_GetObjectItem(pc1,"data");
+            t->data=item->valueint;
+            printf("data = %d\n",t->data);
+            item=cJSON_GetObjectItem(pc1,"stop");
+            t->stop=item->valueint;
+            printf("stop = %d\n",t->stop);
+            return 0;
+         }
+     
     return -1;
 }
 
-int uart_c_2_parameter_mode(void *attach_rx_buffer, Uart_parameter_Analysis *t) {
-    int str_c_2 = 0;
+int uart_c_2_parameter_mode(void *attach_rx_buffer,Uart_parameter_Analysis *t)
+{
+    int strC2=0;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pc_2 = cJSON_GetObjectItem(attach_rx_buffer, "c2"); // 解析c1字段内容
+    cJSON *pc2 = cJSON_GetObjectItem(attach_rx_buffer, "c2"); // 解析c1字段内容
     printf("\nc2:\n");
     //是否为json格式数据
-    // printf("\nlife1\n");
-    //是否指令为空
-    if (pc_2 != NULL) {
-        cJSON *item;
-        item = cJSON_GetObjectItem(pc_2, "mode");
-        str_c_2 = item->valueint;
-        printf("mode=%d\n", str_c_2);
-        return str_c_2;
-    }
-
+        // printf("\nlife1\n");
+        //是否指令为空
+        if (pc2 != NULL)
+        {
+            cJSON * item;
+            item=cJSON_GetObjectItem(pc2,"mode");
+            strC2 = item->valueint;
+            printf("mode=%d\n",strC2);
+            return strC2;
+        }
+    
     return -1;
 }
 
 int uart_c_3_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis *t) {
     char *str_c_3 = NULL;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pc_3 = cJSON_GetObjectItem(attach_rx_buffer, "c3"); // 解析c1字段内容
+    cJSON *pc3 = cJSON_GetObjectItem(attach_rx_buffer, "c3"); // 解析c1字段内容
     printf("\nc3:\n");
-    //是否指令为空
-    if (pc_3 != NULL) {
-        cJSON *item;
-        item = cJSON_GetObjectItem(pc_3, "mode");
-        t->mode = item->valueint;
-        printf("mode = %d\n", t->mode);
-        item = cJSON_GetObjectItem(pc_3, "band");
-        str_c_3 = item->valuestring;
-        t->band = str_c_3;
-        printf("band = %s\n", t->band);
-        item = cJSON_GetObjectItem(pc_3, "parity");
-        if (item != NULL) {
+        //是否指令为空
+        if (pc3 != NULL)
+        {
+            cJSON * item;
+            item=cJSON_GetObjectItem(pc3,"mode");
+            t->mode = item->valueint;
+            printf("mode = %d\n",t->mode);
+            item=cJSON_GetObjectItem(pc3,"band");
             str_c_3 = item->valuestring;
-            t->parity = str_c_3;
-            printf("parity = %s\n", t->parity);
+            t->band = str_c_3;
+            printf("band = %s\n",t->band);
+            item=cJSON_GetObjectItem(pc3,"parity");
+            str_c_3 = item->valuestring;
+            t->parity=str_c_3;
+            printf("parity = %s\n",t->parity);
+            item=cJSON_GetObjectItem(pc3,"data");
+            t->data=item->valueint;
+            printf("data = %d\n",t->data);
+            item=cJSON_GetObjectItem(pc3,"stop");
+            t->stop=item->valueint;
+            printf("stop = %d\n",t->stop);
+            return 0;
         }
-        item = cJSON_GetObjectItem(pc_3, "data");
-        t->data = item->valueint;
-        printf("data = %d\n", t->data);
-        item = cJSON_GetObjectItem(pc_3, "stop");
-        t->stop = item->valueint;
-        printf("stop = %d\n", t->stop);
-        return 0;
-    }
     return -1;
 }
 
