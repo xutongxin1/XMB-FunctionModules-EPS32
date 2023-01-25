@@ -49,6 +49,7 @@ typedef struct uart_configrantion
     enum UartIOMode mode;
     uart_config_t uart_config;
 };
+
 typedef struct
 {
     uint8_t uart_ch;

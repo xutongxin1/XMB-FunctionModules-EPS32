@@ -5,9 +5,9 @@
 #include <sys/param.h>
 #include <stdatomic.h>
 
-#include "main/wifi_configuration.h"
-#include "main/bps_config.h"
-#include "main/uart_config.h"
+#include "InstructionServer/wifi_configuration.h"
+#include "UART/bps_config.h"
+#include "UART/uart_config.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,7 +27,7 @@
 #include "lwip/api.h"
 #include "lwip/tcp.h"
 #include <lwip/netdb.h>
-static const char *UART_TAG = "UART";
+const char *UART_TAG = "UART";
 void uart_rev(void *uartParameter)
 {
     struct uart_configrantion config = *(struct uart_configrantion *)uartParameter;
@@ -87,7 +87,7 @@ void uart_send(void *uartParameter)
     }
     vTaskDelete(NULL);
 }
-static void uart_setup(struct uart_configrantion *config)
+void uart_setup(struct uart_configrantion *config)
 {
     ESP_LOGE(UART_TAG, "pin.ch = %d  pin.mode = %d,\n", config->pin.CH, config->pin.MODE);
     if (config->pin.MODE == TX)

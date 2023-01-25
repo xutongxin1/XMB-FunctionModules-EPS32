@@ -25,15 +25,18 @@
 #include "tcp_server1.h"
 #include "SwitchMode/Handle.h"
 
+#include "UART/bps_config.h"
+#include "UART/uart_config.h"
+
 static int Flag1 = 0;               //是否收到COM心跳包
 const char kHeartRet[5] = "OK!\r\n"; //心跳包发送
 static int Flag3 = 0;               //是否发送OK心跳包
 int Command_Flag = 0;               //指令模式
 int sendFlag = 0;
 char modeRet[5] = "RF0\r\n"; //心跳包发送
-uart_configrantion c1;
-uart_configrantion c2;
-uart_configrantion c3;
+struct uart_configrantion c1;
+struct uart_configrantion c2;
+struct uart_configrantion c3;
 static const char *TAG = "example";
 
 TaskHandle_t kDAPTaskHandle1 = NULL;
@@ -46,6 +49,8 @@ int keepAlive = 1;
 int keepIdle = KEEPALIVE_IDLE;
 int keepInterval = KEEPALIVE_INTERVAL;
 int keepCount = KEEPALIVE_COUNT;
+bool c1UartConfigFlag = false; 
+bool c3UartConfigFlag = false;
 
 void tcp_server_task_1(void *pvParameters) {
 
@@ -160,7 +165,7 @@ void tcp_server_task_1(void *pvParameters) {
                         case ACCEPTING:kState1 = ATTACHING;
 
                         case ATTACHING:
-                            printf("the data is %s\n", tcp_rx_buffer);
+                            printf("RX: %s\n", tcp_rx_buffer);
                             heart_beat(len, tcp_rx_buffer); //当COM心跳成功发送，则置Falg为1
                             printf("Flag1=%d,Flag3=%d\n", Flag1, Flag3);
 
@@ -233,6 +238,8 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
     char *strattach = NULL;
     char str_attach;
     int  str_command;
+    c1UartConfigFlag=false;
+    c3UartConfigFlag=false;
     //首先整体判断是否为一个json格式的数据
 
     cJSON *pJsonRoot = cJSON_Parse(rx_buffer);
@@ -257,25 +264,47 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                 // printf("\nfree\n");
                 
                 if(str_command==220)
-                {
-
-                    uart_c_1_parameter_analysis(pattach,&c1);
-                    uart_c_3_parameter_analysis(pattach,&c3);
-                    uart_c_2_parameter_mode(pattach,&c2);
+                {   
+                    if(uart_c_1_parameter_analysis(pattach,&c1)){
+                        c1UartConfigFlag=true;
+                    }
                     
+                    if(uart_c_3_parameter_analysis(pattach,&c3)){
+                        c3UartConfigFlag=true;
+                    }
+
+                    if(c1UartConfigFlag==true&&c3UartConfigFlag==true){
+                        if(uart_c_2_parameter_mode(pattach,&c2,&c1,&c3)){
+                            printf("c2 setup:\n");
+                            uart_setup(&c2);
+                        }
+                    }
+
+                    if(c1UartConfigFlag==true){
+                        printf("c1 setup:\n");
+                        uart_setup(&c1);   
+                        printf("DONE\n");
+                    }
+
+                    if(c3UartConfigFlag==true){
+                        printf("c3 setup:\n");
+                        uart_setup(&c3);
+                        printf("DONE\n");
+                    }    
                     cJSON_Delete(pJsonRoot);
                 }
                 if (str_command == 101) {
                     strattach = pattach->valuestring;
                     str_attach = (*strattach);
                     if (str_attach != '0' && str_attach <= '9' && str_attach >= '1') {
-                        cJSON_Delete(pJsonRoot);
+                        printf("\n%c\n", str_attach);
                         nvs_flash_write(str_attach, ksock);
                         send(ksock, kHeartRet, 5, 0);
                         int s_1 = shutdown(ksock, 0);
                         int s_2 = close(ksock);
                         printf("\nYou are closing the connection %d %d %d.\n", kSock1, s_1, s_2);
                         printf("Restarting now.\n");
+                        cJSON_Delete(pJsonRoot);
                         fflush(stdout);
                         esp_restart(); //重启函数，esp断电重连
                     }
@@ -287,53 +316,59 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
     }
 }
 
-int uart_c_1_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis *t) {
+int uart_c_1_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion* uartconfig) {
     char *str_c_1 = NULL;
-    //char pC1[1500];
-    //*pC1=*attach_rx_buffer;
-    char str_C1 = '0';
-    //char *testdata= attach_rx_buffer;
-    //首先整体判断是否为一个json格式的数据
-    cJSON *pc1 = cJSON_GetObjectItem(attach_rx_buffer, "c1"); // 解析c1字段内容
+    unsigned char str_C1 = '0';
+    cJSON *pc1 = cJSON_GetObjectItem(attach_rx_buffer, "c_1"); // 解析c1字段内容
     printf("\nc1:\n");
          //是否指令为空
          if (pc1 != NULL)
          {
             cJSON * item;
 
+            uartconfig->pin.CH=CH1;
+
+            uartconfig->pin.MODE = RX;
+
+            uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
+
+            uartconfig->uart_num = UART_NUM_2;
+
             item=cJSON_GetObjectItem(pc1,"mode");
-            t->pin.MODE = item->valueint;
-            printf("mode = %d\n",t->pin.MODE );
+            uartconfig->mode = item->valueint;
+            printf("mode = %d\n",uartconfig->mode);
+
+            if(uartconfig->mode!=Input&&uartconfig->mode!=SingleInput){
+                return 0;
+            }
 
             item=cJSON_GetObjectItem(pc1,"band");
-            t->uart_config.baud_rate = item->valueint;
-            printf("band = %d\n",t->uart_config.baud_rate);
+            uartconfig->uart_config.baud_rate = item->valueint;
+            printf("band = %d\n",uartconfig->uart_config.baud_rate);
 
             item=cJSON_GetObjectItem(pc1,"parity");
-            t->uart_config.parity = item->valueint;
-            printf("parity = %d\n",t->uart_config.parity);
+            uartconfig->uart_config.parity = item->valueint;
+            printf("parity = %d\n",uartconfig->uart_config.parity);
 
             item=cJSON_GetObjectItem(pc1,"data");
-            t->uart_config.data_bits = (item->valueint)-5;
-            printf("data = %d\n",t->uart_config.data_bits);
+            uartconfig->uart_config.data_bits = (item->valueint)-5;
+            printf("data = %d\n",uartconfig->uart_config.data_bits);
 
             item=cJSON_GetObjectItem(pc1,"stop");
-            t->uart_config.stop_bits=item->valueint;
-            printf("stop = %d\n",t->stop);
+            uartconfig->uart_config.stop_bits=item->valueint;
+            printf("stop = %d\n",uartconfig->uart_config.stop_bits);
 
-            t->pin.CH=1;
-
-            return 0;
+            return 1;
          }
      
-    return -1;
+    return 0;
 }
 
-int uart_c_2_parameter_mode(void *attach_rx_buffer,Uart_parameter_Analysis *t)
+int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* c2,struct uart_configrantion* c1,struct uart_configrantion* c3)
 {
     int strC2=0;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pc2 = cJSON_GetObjectItem(attach_rx_buffer, "c2"); // 解析c1字段内容
+    cJSON *pc2 = cJSON_GetObjectItem(attach_rx_buffer, "c_2"); // 解析c1字段内容
     printf("\nc2:\n");
     //是否为json格式数据
         // printf("\nlife1\n");
@@ -342,69 +377,99 @@ int uart_c_2_parameter_mode(void *attach_rx_buffer,Uart_parameter_Analysis *t)
         {
             cJSON * item;
             item=cJSON_GetObjectItem(pc2,"mode");
-            t->pin.MODE = item->valueint;
-            printf("mode=%d\n",t->pin.MODE);
-            t->pin.CH=2;
-            switch (t->mode)
+            c2->mode = item->valueint;
+            printf("mode = %d\n",c2->mode);
+            
+            if(c2->mode!=Follow1Output&&c2->mode!=Follow3Input){
+                return 0;
+            }
+            
+            c2->pin.CH = CH2;
+            c2->uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
+            c2->uart_num = UART_NUM_2;
+
+            switch (c2->mode)
             {
             case 5:
-            t->uart_config.baud_rate = c1->uart_config.baud_rate;
-            t->uart_config.parity = c1->uart_config.parity;
-            t->uart_config.data_bits = c1->uart_config.data_bits;
-            t->uart_config.stop_bits = c1->uart_config.stop_bits;
+            c2->uart_config.baud_rate = c1->uart_config.baud_rate;
+            printf("baud=%d\n",c2->uart_config.baud_rate);
+            c2->uart_config.parity = c1->uart_config.parity;
+            printf("parity=%d\n",c2->uart_config.parity);
+            c2->uart_config.data_bits = c1->uart_config.data_bits;
+            printf("data=%d\n",c2->uart_config.data_bits);
+            c2->uart_config.stop_bits = c1->uart_config.stop_bits;
+            printf("stop=%d\n",c2->uart_config.stop_bits);
+            c2->pin.MODE = TX;
             break;
 
             case 6:
-            t->uart_config.baud_rate = c3->uart_config.baud_rate ;
-            t->uart_config.parity = c3->uart_config.parity;
-            t->uart_config.data_bits = c3->uart_config.data_bits;
-            t->uart_config.stop_bits = c3->uart_config.stop_bits;
+            c2->uart_config.baud_rate = c3->uart_config.baud_rate ;
+            printf("baud=%d\n",c2->uart_config.baud_rate);
+            c2->uart_config.parity = c3->uart_config.parity;
+            printf("parity=%d\n",c2->uart_config.parity);
+            c2->uart_config.data_bits = c3->uart_config.data_bits;
+            printf("data=%d\n",c2->uart_config.data_bits);
+            c2->uart_config.stop_bits = c3->uart_config.stop_bits;
+            printf("stop=%d\n",c2->uart_config.stop_bits);
+            c2->pin.MODE = RX;
             break;
 
             default:
                 break;
             }
-            return 0;
+            return 1;
         }
     
-    return -1;
+    return 0;
 }
 
-int uart_c_3_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis *t) {
+int uart_c_3_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion* uartconfig) {
     char *str_c_3 = NULL;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pc3 = cJSON_GetObjectItem(attach_rx_buffer, "c3"); // 解析c1字段内容
+    cJSON *pc3 = cJSON_GetObjectItem(attach_rx_buffer, "c_3"); // 解析c1字段内容
     printf("\nc3:\n");
         //是否指令为空
         if (pc3 != NULL)
         {
             cJSON * item;
 
+            uartconfig->pin.MODE = TX;
+
             item=cJSON_GetObjectItem(pc3,"mode");
-            t->pin.MODE = item->valueint;
-            printf("mode = %d\n",t->mode);
+            uartconfig->mode = item->valueint;
+            printf("mode = %d\n",uartconfig->mode);            
+
+            uartconfig->uart_num = UART_NUM_0;
+
+            if(uartconfig->mode!=Output&&uartconfig->mode!=SingleOutput){
+                return 0;
+            }
 
             item=cJSON_GetObjectItem(pc3,"band");
-            t->uart_config.baud_rate = item->valueint;
-            printf("band = %d\n",t->uart_config.baud_rate);
+            uartconfig->uart_config.baud_rate = item->valueint;
+            printf("band = %d\n",uartconfig->uart_config.baud_rate);
             
             item=cJSON_GetObjectItem(pc3,"parity");
-            t->uart_config.parity = item->valueint;
-            printf("parity = %s\n",t->uart_config.parity);
+            uartconfig->uart_config.parity = item->valueint;
+            printf("parity = %d\n",uartconfig->uart_config.parity);
             
             item=cJSON_GetObjectItem(pc3,"data");
-            t->uart_config.data_bits = item->valueint;
-            printf("data = %d\n",t->uart_config.data_bits);
+            uartconfig->uart_config.data_bits = (item->valueint)-5;
+            printf("data = %d\n",uartconfig->uart_config.data_bits);
             
             item=cJSON_GetObjectItem(pc3,"stop");
-            t->uart_config.stop_bits = item->valueint;
-            printf("stop = %d\n",t->uart_config.stop_bits);
+            uartconfig->uart_config.stop_bits = item->valueint;
+            printf("stop = %d\n",uartconfig->uart_config.stop_bits);
             
-            t->pin.CH=3;
+            uartconfig->pin.CH=CH3;
 
-            return 0;
+            uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
+
+            uartconfig->pin.MODE = TX;
+
+            return 1;
         }
-    return -1;
+    return 0;
 }
 
 void attach_status(char str_attach) {
@@ -435,6 +500,7 @@ void attach_status(char str_attach) {
 
 void nvs_flash_write(char mode_number, int listen_sock) {
     // Initialize NVS
+    nvs_flash_erase();
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
@@ -443,7 +509,7 @@ void nvs_flash_write(char mode_number, int listen_sock) {
         err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(err);
-
+    
     // Open
     printf("\n");
     // printf("Opening Non-Volatile Storage (NVS) handle... ");
