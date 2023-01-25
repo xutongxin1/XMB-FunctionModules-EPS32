@@ -6,21 +6,23 @@
 #define KEEPALIVE_INTERVAL          5
 #define KEEPALIVE_COUNT             3
 
-typedef struct uart_configrantion
-{
-  // int CH;
-  // int mode;
-  // char *band;
-  // char *parity;
-  // int data;
-  // int stop;
-  QueueHandle_t* uart_queue;
-  struct uart_pin pin;
-  uart_port_t uart_num;
-  enum UartIOMode mode;
-  uart_config_t uart_config;
+// typedef struct uart_configrantion
+// {
+//   // int CH;
+//   // int mode;
+//   // char *band;
+//   // char *parity;
+//   // int data;
+//   // int stop;
+//   QueueHandle_t* uart_queue;
+//   struct uart_pin pin;
+//   uart_port_t uart_num;
+//   enum UartIOMode mode;
+//   uart_config_t uart_config;
 
-} ;
+// } ;
+#include "UART/bps_config.h"
+#include "UART/uart_config.h"
 
 enum state_t {
   ACCEPTING,
@@ -42,9 +44,9 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock);
 void attach_status(char str_attach);
 void nvs_flash_write(char mode_number, int listen_sock);
 int nvs_flash_read(int listen_sock);
-int uart_c_1_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis *t);
-int uart_c_2_parameter_mode(void *attach_rx_buffer, Uart_parameter_Analysis *t);
-int uart_c_3_parameter_analysis(void *attach_rx_buffer, Uart_parameter_Analysis *t);
+int uart_c_1_parameter_analysis(void *attach_rx_buffer, struct uart_configrantion* t) ;
+int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* t,struct uart_configrantion* c1,struct uart_configrantion* c3);
+int uart_c_3_parameter_analysis(void *attach_rx_buffer, struct uart_configrantion* t);
 enum Command_mode {
   DAP = 1,
   UART,
