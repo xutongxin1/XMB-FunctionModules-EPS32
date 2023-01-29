@@ -6,7 +6,7 @@
 #include <stdatomic.h>
 
 #include "InstructionServer/wifi_configuration.h"
-#include "UART/bps_config.h"
+#include "UART/uart_val.h"
 #include "UART/uart_config.h"
 
 #include "freertos/FreeRTOS.h"

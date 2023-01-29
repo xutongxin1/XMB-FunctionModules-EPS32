@@ -24,8 +24,7 @@
 #include "cJSON.h"
 #include "tcp_server1.h"
 #include "SwitchMode/Handle.h"
-
-#include "UART/bps_config.h"
+#include "UART/uart_val.h"
 #include "UART/uart_config.h"
 
 static int Flag1 = 0;               //是否收到COM心跳包
