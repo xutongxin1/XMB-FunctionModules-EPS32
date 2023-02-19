@@ -41,26 +41,26 @@ struct uart_pin
     uint8_t MODE;
 };
 
-typedef struct uart_configrantion
+typedef struct 
 {
-    QueueHandle_t* uart_queue;
+    QueueHandle_t* buff_queue;
     struct uart_pin pin;
     uart_port_t uart_num;
     enum UartIOMode mode;
     uart_config_t uart_config;
-};
+}uart_configrantion;
 
 typedef struct
 {
-    uint8_t uart_ch;
-    char uart_buffer[QUEUE_BUF_SIZE];
+    enum Command_mode mode;
+    char buff[QUEUE_BUF_SIZE];
     uint16_t buff_len;
-} uart_events;
-struct TcpUartParam
+}events;
+typedef struct 
 {
-    QueueHandle_t* uart_queue;
+    QueueHandle_t* buff_queue;
     enum tcp_mode mode;
-    uint8_t ch;
-};
+    enum CHIo ch;
+}TcpParam;
 
 #endif
