@@ -1,6 +1,7 @@
-#ifndef __BPS_CONFIG_H__
-#define __BPS_CONFIG_H__
+#ifndef __UART_VAL_H__
+#define __UART_VAL_H__
 #include "driver/uart.h"
+
 //TCP相关
 #define TCP_BUF_SIZE 512
 #define QUEUE_BUF_SIZE 64
@@ -18,7 +19,7 @@ enum tcp_mode {
 //UART_CONGFIG 串口配置参数
 
 #define UART_BUF_SIZE 512
-#define TCP_IP_ADDRESS 192, 168, 199, 216
+#define TCP_IP_ADDRESS 192, 168, 2, 171
 
 //串口IO模式
 enum UartIOMode {
@@ -41,26 +42,26 @@ struct uart_pin
     uint8_t MODE;
 };
 
-typedef struct uart_configrantion
+typedef struct 
 {
-    QueueHandle_t* uart_queue;
+    QueueHandle_t* buff_queue;
     struct uart_pin pin;
     uart_port_t uart_num;
     enum UartIOMode mode;
     uart_config_t uart_config;
-};
+}uart_configrantion;
 
 typedef struct
 {
-    uint8_t uart_ch;
-    char uart_buffer[QUEUE_BUF_SIZE];
+    //enum Command_mode mode;
+    char* buff;
     uint16_t buff_len;
-} uart_events;
-struct TcpUartParam
+}events;
+typedef struct 
 {
-    QueueHandle_t* uart_queue;
+    QueueHandle_t* buff_queue;
     enum tcp_mode mode;
-    uint8_t ch;
-};
+    enum CHIo ch;
+}TcpParam;
 
 #endif

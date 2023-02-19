@@ -6,7 +6,7 @@
 #include <sys/param.h>
 #include <stdatomic.h>
 
-#include "main/wifi_configuration.h"
+#include "InstructionServer/wifi_configuration.h"
 #include "UART/uart_val.h"
 #include "TCP-CH/tcp.h"
 
@@ -33,7 +33,7 @@
 #define EVENTS_QUEUE_SIZE 10
 
 #ifdef CALLBACK_DEBUG
-#define debug(s, ...) os_printf("%s: " s "\n", "Cb:", ##__VA_ARGS__)
+#define debug(s, ...) printf("%s: " s "\n", "Cb:", ##__VA_ARGS__)
 #else
 #define debug(s, ...)
 #endif
@@ -44,11 +44,11 @@ static uint16_t choose_port(uint8_t pin)
 {
     switch (pin)
     {
-    case 25:
+    case CH2:
         return 1922;
-    case 26:
+    case CH3:
         return 1923;
-    case 34:
+    case CH1:
         return 1921;
     default:
         return -1;
@@ -57,26 +57,26 @@ static uint16_t choose_port(uint8_t pin)
 
 void tcp_send_server(void *Parameter)
 {
-    // os_printf("Parameter = %p  \n", Parameter);
-    struct TcpUartParam *Param = (struct TcpUartParam *)Parameter;
-    // os_printf("Param = %p  \n", Param);
+    // printf("Parameter = %p  \n", Parameter);
+    TcpParam *Param = (TcpParam *)Parameter;
+    // printf("Param = %p  \n", Param);
     struct netconn *conn = NULL;
-    // os_printf("conn\n");
+    // printf("conn\n");
     struct netconn *newconn = NULL;
 
     err_t err = 1;
     // uint16_t len = 0;
     // void *recv_data;
     // recv_data = (void *)pvPortMalloc(TCP_BUF_SIZE);
-    // os_printf("Param->uart_queue = %p  \n*Param->uart_queue = %p\n", Param->uart_queue, *Param->uart_queue);
-    QueueHandle_t uart_queue = *Param->uart_queue;
+    // printf("Param->uart_queue = %p  \n*Param->uart_queue = %p\n", Param->uart_queue, *Param->uart_queue);
+    QueueHandle_t buff_queue = *Param->buff_queue;
     tcpip_adapter_ip_info_t ip_info;
     /* Create a new connection identifier. */
     /* Bind connection to well known port number 7. */
     while (conn == NULL)
     {
         conn = netconn_new(NETCONN_TCP);
-        os_printf("CONN: %p\n", conn);
+        printf("CONN: %p\n", conn);
     }
     // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
     MY_IP_ADDR(&ip_info.ip, TCP_IP_ADDRESS);
@@ -84,7 +84,7 @@ void tcp_send_server(void *Parameter)
 
     /* Tell connection to go into listening mode. */
     netconn_listen(conn);
-    os_printf("PORT: %d\nLISTENING.....\n", choose_port(Param->ch));
+    printf("PORT: %d\nLISTENING.....\n", choose_port(Param->ch));
     /* Grab new connection. */
     while (1)
     {
@@ -106,16 +106,11 @@ void tcp_send_server(void *Parameter)
                 {
                     do
                     {
-                        uart_events event;
+                        events event;
                         netbuf_data(buf, &data, &event.buff_len);
-                        event.uart_send_buff = data;
-                        if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
-                        {
-                        }
-                        else
-                        {
-                            ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
-                        }
+                        event.buff = data;
+                        if (xQueueSend(buff_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)                   
+                                ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
                     } while ((netbuf_next(buf) >= 0));
                     netbuf_delete(buf2);
                     re_err = (netconn_recv(newconn, &buf2));
@@ -123,16 +118,11 @@ void tcp_send_server(void *Parameter)
                     {
                         do
                         {
-                            uart_events event;
+                            events event;
                             netbuf_data(buf2, &data, &event.buff_len);
-                            event.uart_send_buff = data;
-                            if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
-                            {
-                            }
-                            else
-                            {
+                            event.buff = data;
+                            if (xQueueSend(buff_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)                   
                                 ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
-                            }
                         } while ((netbuf_next(buf2) >= 0));
                         netbuf_delete(buf);
                     }
@@ -154,18 +144,18 @@ void tcp_send_server(void *Parameter)
 }
 void tcp_rev_server(void *Parameter)
 {
-    struct TcpUartParam *Param = (struct TcpUartParam *)Parameter;
+    TcpParam *Param = (TcpParam *)Parameter;
     struct netconn *conn = NULL;
     struct netconn *newconn = NULL;
     // err_t re_err = 0;
-    QueueHandle_t uart_queue = *Param->uart_queue;
+    QueueHandle_t buff_queue = *Param->buff_queue;
     tcpip_adapter_ip_info_t ip_info;
     /* Create a new connection identifier. */
     /* Bind connection to well known port number 7. */
     while (conn == NULL)
     {
         conn = netconn_new(NETCONN_TCP);
-        os_printf("CONN: %p\n", conn);
+        printf("CONN: %p\n", conn);
         conn->send_timeout = 0;
     }
     MY_IP_ADDR(&ip_info.ip, TCP_IP_ADDRESS);
@@ -173,7 +163,7 @@ void tcp_rev_server(void *Parameter)
     netconn_bind(conn, &ip_info.ip, choose_port(Param->ch));
     /* Tell connection to go into listening mode. */
     netconn_listen(conn);
-    os_printf("PORT: %d\nLISTENING.....\n", choose_port(Param->ch));
+    printf("PORT: %d\nLISTENING.....\n", choose_port(Param->ch));
     /* Grab new connection. */
     while (1)
     {
@@ -183,11 +173,11 @@ void tcp_rev_server(void *Parameter)
         {
             while (1)
             {
-                uart_events event;
-                int ret = xQueueReceive(uart_queue, &event, portMAX_DELAY);
+                events event;
+                int ret = xQueueReceive(buff_queue, &event, portMAX_DELAY);
                 if (ret == pdTRUE)
                 {
-                    netconn_write(newconn, event.uart_buffer, event.buff_len, NETCONN_NOCOPY);
+                    netconn_write(newconn, event.buff, event.buff_len, NETCONN_NOCOPY);
                 }
                 if (get_connect_state(newconn) == ERR_CLSD)
                 {
@@ -214,6 +204,5 @@ static err_t get_connect_state(struct netconn *conn)
             return ERR_CLSD;
         }
     }
-
     return ERR_OK;
 }

@@ -21,11 +21,7 @@
 //   uart_config_t uart_config;
 
 // } ;
-<<<<<<< HEAD
-#include "UART/bps_config.h"
-=======
 #include "UART/uart_val.h"
->>>>>>> DEV-LHQ
 #include "UART/uart_config.h"
 
 enum state_t {
@@ -46,11 +42,7 @@ void tcp_server_task_1(void *pvParameters);
 void heart_beat(unsigned int len, char *rx_buffer);
 void command_json_analysis(unsigned int len, void *rx_buffer, int ksock);
 void attach_status(char str_attach);
-void nvs_flash_write(char mode_number, int listen_sock);
-int nvs_flash_read(int listen_sock);
-int uart_c_1_parameter_analysis(void *attach_rx_buffer, struct uart_configrantion* t) ;
-int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* t,struct uart_configrantion* c1,struct uart_configrantion* c3);
-int uart_c_3_parameter_analysis(void *attach_rx_buffer, struct uart_configrantion* t);
+
 enum Command_mode {
   DAP = 1,
   UART,
