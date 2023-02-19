@@ -6,7 +6,11 @@
 #include <stdatomic.h>
 
 #include "InstructionServer/wifi_configuration.h"
+<<<<<<< HEAD
 #include "UART/bps_config.h"
+=======
+#include "UART/uart_val.h"
+>>>>>>> DEV-LHQ
 #include "UART/uart_config.h"
 
 #include "freertos/FreeRTOS.h"

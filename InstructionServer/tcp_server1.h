@@ -21,7 +21,11 @@
 //   uart_config_t uart_config;
 
 // } ;
+<<<<<<< HEAD
 #include "UART/bps_config.h"
+=======
+#include "UART/uart_val.h"
+>>>>>>> DEV-LHQ
 #include "UART/uart_config.h"
 
 enum state_t {
