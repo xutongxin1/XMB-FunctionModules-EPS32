@@ -2,20 +2,6 @@
 #define __UART_VAL_H__
 #include "driver/uart.h"
 
-//TCP相关
-#define TCP_BUF_SIZE 512
-#define QUEUE_BUF_SIZE 64
-enum CHIo
-{
-    CH1 = 34,
-    CH2 = 25,
-    CH3 = 26,
-
-};
-enum tcp_mode {
-    SEND = 0,
-    RECEIVE,
-};
 //UART_CONGFIG 串口配置参数
 
 #define UART_BUF_SIZE 512
@@ -57,11 +43,5 @@ typedef struct
     char* buff;
     uint16_t buff_len;
 }events;
-typedef struct 
-{
-    QueueHandle_t* buff_queue;
-    enum tcp_mode mode;
-    enum CHIo ch;
-}TcpParam;
 
 #endif
