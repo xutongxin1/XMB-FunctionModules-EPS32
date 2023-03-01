@@ -1,6 +1,8 @@
 #ifndef __Handle_H__
 #define __Handle_H__
+#include "UART/uart_val.h"
 
+TcpParam tcp_param;
 
 void DAP_Handle(void);
 void UART_Handle(void);
@@ -11,5 +13,8 @@ void PWM_Simulation_Handle(void);
 void I2C_Handle(void);
 void SPI_Handle(void);
 void CAN_Handle(void);
+
+
+void uart_task(void);
 
 #endif

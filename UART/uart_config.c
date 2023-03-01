@@ -6,6 +6,7 @@
 #include <stdatomic.h>
 
 #include "InstructionServer/wifi_configuration.h"
+
 #include "UART/uart_val.h"
 #include "UART/uart_config.h"
 
@@ -27,16 +28,18 @@
 #include "lwip/api.h"
 #include "lwip/tcp.h"
 #include <lwip/netdb.h>
+
 const char *UART_TAG = "UART";
+
 void uart_rev(void *uartParameter)
 {
-    struct uart_configrantion config = *(struct uart_configrantion *)uartParameter;
+    uart_configrantion config = *(uart_configrantion *)uartParameter;
     uart_port_t uart_num = config.uart_num;
     uart_setup(&config);
     char buffer[UART_BUF_SIZE];
     size_t uart_buf_len = 0;
-    uart_events event;
-    QueueHandle_t uart_queue = *config.uart_queue;
+    events event;
+    QueueHandle_t uart_queue = *config.buff_queue;
     while (1)
     {
         while (uart_buf_len == 0)
@@ -50,8 +53,8 @@ void uart_rev(void *uartParameter)
         ESP_LOGE(UART_TAG, "buffer = %s  \nuart_buf_len = %d\n", buffer, uart_buf_len);
         if (uart_buf_len != 0)
         {
-            strncpy(event.uart_buffer, buffer, uart_buf_len);
-            ESP_LOGE(UART_TAG, "event buffer = %s  \n", event.uart_buffer);
+            strncpy(event.buff, buffer, uart_buf_len);
+            ESP_LOGE(UART_TAG, "event buffer = %s  \n", event.buff);
             event.buff_len = uart_buf_len;
             uart_buf_len = 0;
             if(xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
@@ -69,25 +72,25 @@ void uart_rev(void *uartParameter)
 }
 void uart_send(void *uartParameter)
 {
-    struct uart_configrantion config = *(struct uart_configrantion *)uartParameter;
+    uart_configrantion config = *(uart_configrantion *)uartParameter;
     uart_port_t uart_num = config.uart_num;
     uart_setup(&config);
-    ESP_LOGE(UART_TAG, "config.uart_queue = %p  \n*config.uart_queue = %p\n", config.uart_queue, *config.uart_queue);
-    QueueHandle_t uart_queue = *config.uart_queue;
+    //ESP_LOGE(UART_TAG, "config.uart_queue = %p  \n*config.uart_queue = %p\n", config.buff_queue, *config.buff_queue);
+    QueueHandle_t uart_queue = *config.buff_queue;
     while (1)
     {
-        uart_events event;
-        ESP_LOGE(UART_TAG, "&event: %p", &event);
+        events event;
+        //ESP_LOGE(UART_TAG, "&event: %p", &event);
         while (xQueueReceive(uart_queue, &event, pdMS_TO_TICKS(100)) != pdTRUE)
             ;
         if (event.buff_len != 0)
         {
-            uart_write_bytes(uart_num, (const char *)event.uart_buffer, event.buff_len);
+            uart_write_bytes(uart_num, (const char *)event.buff, event.buff_len);
         }
     }
     vTaskDelete(NULL);
 }
-void uart_setup(struct uart_configrantion *config)
+void uart_setup(uart_configrantion *config)
 {
     ESP_LOGE(UART_TAG, "pin.ch = %d  pin.mode = %d,\n", config->pin.CH, config->pin.MODE);
     if (config->pin.MODE == TX)
@@ -95,7 +98,7 @@ void uart_setup(struct uart_configrantion *config)
         uart_set_pin(config->uart_num, config->pin.CH, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
         ESP_LOGE(UART_TAG, "config->uart_num = %d\n", config->uart_num);
         uart_param_config(config->uart_num, &config->uart_config);
-        uart_driver_install(config->uart_num, 127, UART_BUF_SIZE, 0, NULL, 0);
+        uart_driver_install(config->uart_num, 129, UART_BUF_SIZE, 0, NULL, 0);
         ESP_LOGE(UART_TAG, "uart bridge init successfully\n");
     }
     else
