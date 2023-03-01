@@ -236,7 +236,7 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                 str_command = pcommand->valueint;
                 printf("\nstr_command : %d", str_command);
                 
-                if(str_command==220&&uart_handle_flag==1)
+                if(str_command==220 && uart_handle_flag==true)
                 {   
                     if(uart_1_parameter_analysis(pattach,&c1)){
                         c1UartConfigFlag=true;
@@ -261,7 +261,10 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                     if (str_attach != '0' && str_attach <= '9' && str_attach >= '1') {
                         printf("\n%c\n", str_attach);
                         nvs_flash_write(str_attach, ksock);
-                        send(ksock, kHeartRet, 5, 0);
+                        do{
+                            written=send(ksock, kHeartRet, 5, 0);
+                            printf("%d\n",written);
+                        }while(written<=0);
                         int s_1 = shutdown(ksock, 0);
                         int s_2 = close(ksock);
                         printf("\nYou are closing the connection %d %d %d.\n", kSock1, s_1, s_2);
