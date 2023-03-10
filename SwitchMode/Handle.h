@@ -2,7 +2,7 @@
 #define __Handle_H__
 #include "TCP-CH/tcp.h"
 
-TcpParam tcp_param;
+
 
 void DAP_Handle(void);
 void UART_Handle(void);

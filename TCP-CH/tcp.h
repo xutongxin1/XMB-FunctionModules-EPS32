@@ -39,20 +39,25 @@ typedef struct
     enum tcp_mode mode;
     enum Port port;
 }TcpParam;
+
 typedef struct 
 {
     TcpParam* TcpParam;
-    struct netconn *conn;
-    struct netconn *newconn;
+    struct netconn **conn;
+    struct netconn **newconn;
     uint8_t* task_flag;
 }SubTcpParam;
+
 typedef struct 
 {
-    TaskHandle_t** TaskHandle[10];
+    TaskHandle_t* TaskHandle[10];
     uint8_t TaskNum;
 }TcpTaskHandle_t;
+
 void tcp_send_server(void *Parameter);
 void tcp_rev_server(void *Parameter);
 void tcp_server(void *Parameter);
 void tcp_test_server(void *Parameter);
+TcpTaskHandle_t* TcpTaskCareate(void *Parameter);
+uint8_t TcpTaskAllDelete(TcpTaskHandle_t* TcpHandle);
 #endif

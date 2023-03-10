@@ -40,7 +40,8 @@
 #define MY_IP_ADDR(...) IP4_ADDR(__VA_ARGS__)
 static const char *TCP_TAG = "TCP";
 static err_t get_connect_state(struct netconn *conn);
-static TaskHandle_t** SubTask_Handle;
+static TaskHandle_t SubTask_Handle;
+static TaskHandle_t TCP_TASK_HANDLE[10];
 //static TaskHandle_t** TcpTaskHandle;
 static TcpTaskHandle_t TcpHandle = {
         .TaskNum = 0,
@@ -67,14 +68,19 @@ static TcpTaskHandle_t TcpHandle = {
  * @param conn A netconn descriptor 
  * @return ERR_OK if bound, any other err_t on failure
  */
-static uint8_t create_tcp_server(TcpParam *Parameter, struct netconn* conn)
+static uint8_t create_tcp_server(uint16_t port, struct netconn** conn)
 {
-    while (conn == NULL)
+    while (*conn == NULL)
     {
-        conn = netconn_new(NETCONN_TCP);
+        *conn = netconn_new(NETCONN_TCP);
     }
+    printf("creat : %p\r\n",*conn);
+    // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
+    //netconn_bind(*conn, &ip_info.ip, Param->port);
      /* Bind connection to well known port number 7. */
-    netconn_bind(conn, IP4_ADDR_ANY, Parameter->port);
+    netconn_bind(*conn, IP_ADDR_ANY, port);
+    netconn_listen(*conn); /* Grab new connection. */
+    printf("PORT: %d\nLISTENING.....\n", port);
     return ESP_OK;
 }
 
@@ -96,14 +102,24 @@ void tcp_send_server(void *Parameter)
     //tcpip_adapter_ip_info_t ip_info;
     /* Create a new connection identifier. */
     /* Bind connection to well known port number 7. */
-
+    create_tcp_server(Param->port,&conn);
+    // while (conn == NULL )
+    // {
+    //     conn = netconn_new(NETCONN_TCP);
+    // }
+    // // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
+    // //netconn_bind(*conn, &ip_info.ip, Param->port);
+    //  /* Bind connection to well known port number 7. */
+    // netconn_bind(conn, IP_ADDR_ANY, Param->port);
+    // netconn_listen(conn); /* Grab new connection. */
     // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
     //MY_IP_ADDR(&ip_info.ip, TCP_IP_ADDRESS);
    // netconn_bind(conn, &ip_info.ip, Param->port);
    
     /* Tell connection to go into listening mode. */
-    netconn_listen(conn);
-    printf("PORT: %d\nLISTENING.....\n", Param->port);
+    //netconn_listen(conn);
+    //printf("listening : %p\r\n",conn);
+   
     /* Grab new connection. */
     while (1)
     {
@@ -149,8 +165,8 @@ void tcp_send_server(void *Parameter)
                 else if (re_err == ERR_CLSD)
                 {
                     ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Param->port);
-                    netbuf_delete(buf);
-                    netbuf_delete(buf2);
+                    //netbuf_delete(buf);
+                    //netbuf_delete(buf2);
                     break;
                 }
             }
@@ -168,22 +184,23 @@ void tcp_rev_server(void *Parameter)
     struct netconn *newconn = NULL;
     // err_t re_err = 0;
     QueueHandle_t buff_queue = *Param->rx_buff_queue;
-    //tcpip_adapter_ip_info_t ip_info;
+    
     /* Create a new connection identifier. */
-    create_tcp_server(Param,conn);
+    create_tcp_server(Param->port,&conn);
     // while (conn == NULL)
     // {
     //     conn = netconn_new(NETCONN_TCP);
     //     printf("CONN: %p\n", conn);
     //     conn->send_timeout = 0;
     // }
-    //MY_IP_ADDR(&ip_info.ip, TCP_IP_ADDRESS);
-    // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
-    //netconn_bind(conn, &ip_info.ip, Param->port);
+    // tcpip_adapter_ip_info_t ip_info;
+    // MY_IP_ADDR(&ip_info.ip, TCP_IP_ADDRESS);
+    // // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
+    // netconn_bind(conn, &ip_info.ip, Param->port);
     // netconn_bind(conn, IP4_ADDR_ANY, Param->port);
     /* Tell connection to go into listening mode. */
-    netconn_listen(conn);
-    printf("PORT: %d\nLISTENING.....\n", Param->port);
+    //netconn_listen(conn);
+    //printf("PORT: %d\nLISTENING.....\n", Param->port);
     /* Grab new connection. */
     while (1)
     {
@@ -218,7 +235,7 @@ void tcp_server_subtask(void* Parameter)
     TcpParam *tcp_param = Param->TcpParam;
     QueueHandle_t rx_buff_queue = *tcp_param->rx_buff_queue;
     //struct netconn *conn = Param->conn;
-    struct netconn *newconn = Param->newconn;
+    struct netconn *newconn = *(Param->newconn);
     uint8_t task_flag = *(Param->task_flag);
     while (task_flag)
     {
@@ -236,27 +253,30 @@ void tcp_server_subtask(void* Parameter)
 TcpTaskHandle_t* TcpTaskCareate(void *Parameter)
 {
     TcpParam *Param = (TcpParam *)Parameter;
-    const char* allname = "ALL";
-    const char* rxname = "Receive ";
-    const char* txname = "Transmit";
-    char pcName[16];
+    const char allname[] = "ALL";
+    const char rxname[] = "Rec";
+    const char txname[] = "Tran";
+    char pcName[18];
     switch (Param->mode)
     {
     case SEND:
-        sprintf(pcName, "Tcp%ssTask%d",txname,TcpHandle.TaskNum);
-        xTaskCreate(tcp_send_server, (const char*)pcName, 4096, Parameter, 14, *TcpHandle.TaskHandle[TcpHandle.TaskNum]);
+        sprintf(pcName, "Tcp%s%d",txname,TcpHandle.TaskNum);
+        xTaskCreatePinnedToCore(tcp_send_server, (const char* const)pcName, 5120, Parameter, 14,&TCP_TASK_HANDLE[TcpHandle.TaskNum],0);
+        TcpHandle.TaskHandle[TcpHandle.TaskNum] = &TCP_TASK_HANDLE[TcpHandle.TaskNum];
         TcpHandle.TaskNum++;
         break;
     case RECEIVE:
-        sprintf(pcName, "Tcp%sTask%d",rxname,TcpHandle.TaskNum);
-        xTaskCreate(tcp_rev_server, (const char*)pcName, 4096, Parameter, 14, *TcpHandle.TaskHandle[TcpHandle.TaskNum]);
+        sprintf(pcName, "Tcp%s%d",rxname,TcpHandle.TaskNum);
+        xTaskCreatePinnedToCore(tcp_rev_server, (const char* const)pcName, 5120, Parameter, 14,&TCP_TASK_HANDLE[TcpHandle.TaskNum],0);
+        TcpHandle.TaskHandle[TcpHandle.TaskNum] = &TCP_TASK_HANDLE[TcpHandle.TaskNum];
         TcpHandle.TaskNum++;
         break;
     case ALL:
-        sprintf(pcName, "Tcp%sTask%d",allname,TcpHandle.TaskNum);
-        xTaskCreate(tcp_rev_server, (const char*)pcName, 4096, Parameter, 14, *TcpHandle.TaskHandle[TcpHandle.TaskNum]);
+        sprintf(pcName, "Tcp%s%d",allname,TcpHandle.TaskNum);
+        xTaskCreatePinnedToCore(tcp_server, (const char* const)pcName, 5120, Parameter, 14,&TCP_TASK_HANDLE[TcpHandle.TaskNum],0);
+        TcpHandle.TaskHandle[TcpHandle.TaskNum] = &TCP_TASK_HANDLE[TcpHandle.TaskNum];
         TcpHandle.TaskNum++;
-        TcpHandle.TaskHandle[TcpHandle.TaskNum] = SubTask_Handle;
+        TcpHandle.TaskHandle[TcpHandle.TaskNum] = &SubTask_Handle;
         TcpHandle.TaskNum++;
         break;
     default:
@@ -269,9 +289,9 @@ uint8_t TcpTaskAllDelete(TcpTaskHandle_t* TcpHandle)
 {
     for (int i = 0; i < TcpHandle->TaskNum; i++)
     {
-        if (*(TcpHandle->TaskHandle[i]) != NULL)
+        if ((TcpHandle->TaskHandle[i]) != NULL)
         {
-            vTaskDelete(*(TcpHandle->TaskHandle[i]));
+            vTaskDelete((TcpHandle->TaskHandle[i]));
         }
         else
         {
@@ -289,17 +309,17 @@ void tcp_server(void *Parameter)
     uint8_t subtask_flag = 0;
     SubTcpParam SubParam = {
         .TcpParam = Param,
-        .conn = conn,
-        .newconn = newconn,
+        .conn = &conn,
+        .newconn = &newconn,
         .task_flag = &subtask_flag,
     };
     err_t err = 1;
     QueueHandle_t tx_buff_queue = *Param->tx_buff_queue;
     /* Create a new connection identifier. */
-    create_tcp_server(Param,conn);
+     create_tcp_server(Param->port,&conn);
     /* Tell connection to go into listening mode. */
-    netconn_listen(conn);
-    printf("PORT: %d\nLISTENING.....\n",  Param->port);
+    //netconn_listen(conn);
+    // printf("PORT: %d\nLISTENING.....\n",  Param->port);
     while (1)
     {
          int re_err;
@@ -314,7 +334,8 @@ void tcp_server(void *Parameter)
             {
                 /*Create Receive Subtask*/
                 subtask_flag = 1;
-                xTaskCreate(tcp_server_subtask, "tcp_server_subtask", 4096, (void*)(&SubParam), 14, *SubTask_Handle);
+                SubParam.newconn = newconn;
+                xTaskCreate(tcp_server_subtask, "tcp_subtask", 4096, (void*)(&SubParam), 14, &SubTask_Handle);
             }
             /*Create send buffer*/
             struct netbuf *buf;
@@ -350,10 +371,10 @@ void tcp_server(void *Parameter)
                 }
                 else if (re_err == ERR_CLSD)
                 {
-                   // ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Param->port);
+                    ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Param->port);
 
-                    netbuf_delete(buf);
-                    netbuf_delete(buf2);
+                    // netbuf_delete(buf);
+                    // netbuf_delete(buf2);
                     break;
                 }
             }

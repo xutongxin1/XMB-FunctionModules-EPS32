@@ -55,6 +55,9 @@ int keepIdle = KEEPALIVE_IDLE;
 int keepInterval = KEEPALIVE_INTERVAL;
 int keepCount = KEEPALIVE_COUNT;
 
+extern uart_configrantion c1;
+extern uart_configrantion c2;
+extern uart_configrantion c3;
 extern bool c1UartConfigFlag;
 extern bool c2UartConfigFlag;
 extern bool uart_handle_flag;
@@ -242,7 +245,7 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                         c1UartConfigFlag=true;
                     }
                     
-                    if(uart_2_parameter_analysis(pattach,&c3)){
+                    if(uart_2_parameter_analysis(pattach,&c2)){
                         c2UartConfigFlag=true;
                     }
 
