@@ -11,10 +11,10 @@
 
 //串口IO模式
 enum UartIOMode {
-   SEND,    //单发
-   RECEIVE, //单收
-   FORWARD, //转发
-   ALL,     //全双工
+   Send,    //单发
+   Receive, //单收
+   Forward, //转发
+   All,     //全双工
 };
 
 //串口引脚配置

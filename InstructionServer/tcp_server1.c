@@ -55,9 +55,9 @@ int keepIdle = KEEPALIVE_IDLE;
 int keepInterval = KEEPALIVE_INTERVAL;
 int keepCount = KEEPALIVE_COUNT;
 
-extern uart_configrantion c1;
-extern uart_configrantion c2;
-extern uart_configrantion c3;
+extern uart_init_t c1;
+extern uart_init_t c2;
+extern uart_init_t c3;
 extern bool c1UartConfigFlag;
 extern bool c2UartConfigFlag;
 extern bool uart_handle_flag;
