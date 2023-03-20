@@ -7,8 +7,8 @@
 #include "TCP-CH/tcp.h"
 TcpParam tcp_param;
 bool uart_handle_flag = false;
-extern uart_configrantion c1;
-extern uart_configrantion c2;
+extern uart_init_t c1;
+extern uart_init_t c2;
 
 void DAP_Handle(void){}
 void UART_Handle(void){
@@ -30,8 +30,8 @@ void uart_task(void)
     static QueueHandle_t uart_queue = NULL;
     uart_queue = xQueueCreate(10, sizeof(events));
     uart_queue1 = xQueueCreate(50, sizeof(events));
-    c1.buff_queue = &uart_queue;
-    c2.buff_queue = &uart_queue1;
+    c1.rx_buff_queue = &uart_queue;
+    c2.tx_buff_queue = &uart_queue1;
     TaskHandle_t xHandle = NULL;
 
     xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);

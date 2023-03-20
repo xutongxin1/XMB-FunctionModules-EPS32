@@ -1,8 +1,12 @@
 #include "my_netconn.h"
 #include "lwip/opt.h"
-#include "usart.h" #if LWIP_NETCONN
+#include "UART/uart_val.h"
+#include "UART/uart_config.h"
+#include "driver/uart.h"
+#if LWIP_NETCONN
 #include "lwip/sys.h"
-#include "lwip/api.h" #define TCPECHO_THREAD_PRIO(osPriorityAboveNormal)
+#include "lwip/api.h"
+#define TCPECHO_THREAD_PRIO(osPriorityAboveNormal)
 static void mytcp_thread(void *arg)
 {
     struct netconn *conn, *newconn;
@@ -40,4 +44,5 @@ void mytcp_init(void)
 {
     sys_thread_new("tcpecho_thread", mytcp_thread, NULL, (configMINIMAL_STACK_SIZE * 2), TCPECHO_THREAD_PRIO);
 }
-#endif /* LWIP_NETCONN */
+
+#endif 

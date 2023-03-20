@@ -1,13 +1,13 @@
 #include "UART/uart_analysis_parameters.h"
 #include "cJSON.h"
-uart_configrantion c1;
-uart_configrantion c2;
-uart_configrantion c3;
+uart_init_t c1;
+uart_init_t c2;
+uart_init_t c3;
 
 bool c1UartConfigFlag = false; 
 bool c2UartConfigFlag = false;
 
-int uart_1_parameter_analysis(void *attach_rx_buffer,uart_configrantion* uartconfig) {
+int uart_1_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
 
     cJSON *pu1 = cJSON_GetObjectItem(attach_rx_buffer, "u1"); // 解析c1字段内容
     printf("\nu1:\n");
@@ -16,7 +16,7 @@ int uart_1_parameter_analysis(void *attach_rx_buffer,uart_configrantion* uartcon
          {
             cJSON * item;
 
-            uartconfig->pin.CH=34;
+            uartconfig->pin.rx_pin=34;
 
             //uartconfig->pin.MODE = RX;
 
@@ -52,7 +52,7 @@ int uart_1_parameter_analysis(void *attach_rx_buffer,uart_configrantion* uartcon
 
 
 
-int uart_2_parameter_analysis(void *attach_rx_buffer,uart_configrantion* uartconfig) {
+int uart_2_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
     //首先整体判断是否为一个json格式的数据
     cJSON *pu2 = cJSON_GetObjectItem(attach_rx_buffer, "u2"); // 解析c1字段内容
     printf("\nu2:\n");
@@ -83,7 +83,7 @@ int uart_2_parameter_analysis(void *attach_rx_buffer,uart_configrantion* uartcon
             uartconfig->uart_config.stop_bits = item->valueint;
             printf("stop = %d\n",uartconfig->uart_config.stop_bits);
             
-            uartconfig->pin.CH=25;
+            uartconfig->pin.tx_pin=25;
 
             uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
 
