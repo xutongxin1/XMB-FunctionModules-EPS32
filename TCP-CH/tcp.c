@@ -234,6 +234,7 @@ void tcp_server_subtask(void* Parameter)
     SubTcpParam* Param = (SubTcpParam*)Parameter;
     TcpParam *tcp_param = Param->TcpParam;
     QueueHandle_t rx_buff_queue = *tcp_param->rx_buff_queue;
+    printf("tcp_rx_queue rx: %p\n", tcp_param->rx_buff_queue);
     //struct netconn *conn = Param->conn;
     struct netconn *newconn = *(Param->newconn);
     uint8_t task_flag = *(Param->task_flag);
@@ -307,16 +308,17 @@ void tcp_server(void *Parameter)
     struct netconn *conn = NULL;
     struct netconn *newconn = NULL;
     uint8_t subtask_flag = 0;
+    err_t err = 1;
+    QueueHandle_t tx_buff_queue = *Param->tx_buff_queue;
+    printf("tcp_tx_queue tx: %p\n", Param->tx_buff_queue);
+    /* Create a new connection identifier. */
+     create_tcp_server(Param->port,&conn);
     SubTcpParam SubParam = {
         .TcpParam = Param,
         .conn = &conn,
         .newconn = &newconn,
         .task_flag = &subtask_flag,
     };
-    err_t err = 1;
-    QueueHandle_t tx_buff_queue = *Param->tx_buff_queue;
-    /* Create a new connection identifier. */
-     create_tcp_server(Param->port,&conn);
     /* Tell connection to go into listening mode. */
     //netconn_listen(conn);
     // printf("PORT: %d\nLISTENING.....\n",  Param->port);
@@ -334,7 +336,7 @@ void tcp_server(void *Parameter)
             {
                 /*Create Receive Subtask*/
                 subtask_flag = 1;
-                SubParam.newconn = newconn;
+                SubParam.newconn = &newconn;
                 xTaskCreate(tcp_server_subtask, "tcp_subtask", 4096, (void*)(&SubParam), 14, &SubTask_Handle);
             }
             /*Create send buffer*/
@@ -351,8 +353,12 @@ void tcp_server(void *Parameter)
                         events tx_event_1;
                         netbuf_data(buf, &data, &tx_event_1.buff_len);
                         tx_event_1.buff = data;
+                        //tx_event_1.buff[tx_event_1.buff_len] = '\0';
+                       // printf("tcp ： send buff:%s \n", tx_event_1.buff);
                         if (xQueueSend(tx_buff_queue, &tx_event_1, pdMS_TO_TICKS(10)) == pdPASS)                   
-                                ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
+                            ;
+                        else
+                            ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
                     } while ((netbuf_next(buf) >= 0));
                     netbuf_delete(buf2);
                     re_err = (netconn_recv(newconn, &buf2));
@@ -364,6 +370,8 @@ void tcp_server(void *Parameter)
                             netbuf_data(buf2, &data, &tx_event_2.buff_len);
                             tx_event_2.buff = data;
                             if (xQueueSend(tx_buff_queue, &tx_event_2, pdMS_TO_TICKS(10)) == pdPASS)                   
+                                   ;
+                            else
                                 ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
                         } while ((netbuf_next(buf2) >= 0));
                         netbuf_delete(buf);

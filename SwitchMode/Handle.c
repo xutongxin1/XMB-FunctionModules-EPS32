@@ -31,13 +31,16 @@ void uart_task(void)
     uart_queue = xQueueCreate(10, sizeof(events));
     uart_queue1 = xQueueCreate(50, sizeof(events));
     c1.rx_buff_queue = &uart_queue;
+    c1.tx_buff_queue = &uart_queue1;
     c2.tx_buff_queue = &uart_queue1;
+    printf("uart_queue rx: %p  uart_queue1 tx: %p\n", &uart_queue, &uart_queue1);
     TaskHandle_t xHandle = NULL;
 
-    xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);
+    //xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);
+    Create_Uart_Task((void *)&c1);
     printf("create uartr \n");
-    xTaskCreatePinnedToCore(uart_send, "uartt", 5120, (void *)&c2, 10, &xHandle, 1);
-    printf("create uartt \n");
+    // xTaskCreatePinnedToCore(uart_send, "uartt", 5120, (void *)&c2, 10, &xHandle, 1);
+    // printf("create uartt \n");
 
 
     TcpTaskHandle_t* tcphand;
@@ -49,10 +52,10 @@ void uart_task(void)
         .port = CH2,
 
     };
-    tcphand = TcpTaskCareate((void*) &tp);
-    tp.mode = RECEIVE;
-    tp.port = CH3;
-    tcphand = TcpTaskCareate((void*) &tp);
+    // tcphand = TcpTaskCareate((void*) &tp);
+    // tp.mode = RECEIVE;
+    // tp.port = CH3;
+    // tcphand = TcpTaskCareate((void*) &tp);
     tp.mode = ALL;
     tp.port = CH4;
     tcphand = TcpTaskCareate((void*) &tp);

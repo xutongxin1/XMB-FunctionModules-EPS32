@@ -17,12 +17,12 @@ int uart_1_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
             cJSON * item;
 
             uartconfig->pin.rx_pin=34;
+            uartconfig->pin.tx_pin=25;
+            uartconfig->mode = Receive;
 
-            //uartconfig->pin.MODE = RX;
+            //uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
 
-            uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
-
-            uartconfig->uart_num = UART_NUM_2;
+            //uartconfig->uart_num = UART_NUM_2;
 
             item=cJSON_GetObjectItem(pu1,"mode");
             uartconfig->mode = item->valueint;
@@ -87,6 +87,8 @@ int uart_2_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
 
             uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
 
+            uartconfig->mode = Send;
+            
             return 1;
         }
     return 0;

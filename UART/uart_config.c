@@ -181,8 +181,8 @@ uart_err_t is_uart_num_free(uart_port_t uart_num)
 uart_err_t uart_setup(uart_init_t *config)
 {     
     config->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
+    config->uart_config.source_clk  = UART_SCLK_APB;
     config->uart_num = get_uart_free_num();
- 
     if (is_uart_num_free(config->uart_num))
     {
          ESP_LOGE(UART_TAG, "uart NUM existed\r\n");
@@ -200,10 +200,10 @@ uart_err_t uart_setup(uart_init_t *config)
     }
     if(uart_param_config(config->uart_num, &config->uart_config))
     {
-        ESP_LOGE(UART_TAG, "uart init fail\n");
+        ESP_LOGE(UART_TAG, "uart config fail\n");
         return UART_CONFIG_FAIL;
     }
-    if(uart_driver_install(config->uart_num, 129, UART_BUF_SIZE, 0, NULL, 0))
+    if(uart_driver_install(config->uart_num, UART_BUF_SIZE, UART_BUF_SIZE, 0, NULL, 0))
     {
         ESP_LOGE(UART_TAG, "uart init fail\n");
         return UART_INSTALL_FAIL;
@@ -306,17 +306,18 @@ void uart_rev(void *param)
         {
             uart_buf_len = uart_buf_len > UART_BUF_SIZE ? UART_BUF_SIZE : uart_buf_len;
             uart_buf_len = uart_read_bytes(uart_num, event.buff_arr, uart_buf_len, pdMS_TO_TICKS(5));
-            // buffer[uart_buf_len] = '\0';
-            ESP_LOGE(UART_TAG, "buffer = %s  \nuart_buf_len = %d\n", buffer, uart_buf_len);
+            event.buff_arr[uart_buf_len] = '\0';
+            //ESP_LOGE(UART_TAG, "buffer = %s  \nuart_buf_len = %d\n", buffer, uart_buf_len);
             if (uart_buf_len != 0)
             {
                 // strncpy(event.buff, buffer, uart_buf_len);
-                ESP_LOGE(UART_TAG, "event buffer = %s  \n", event.buff);
+               // ESP_LOGE(UART_TAG, "event buffer = %s  \n", event.buff_arr);
+                event.buff = event.buff_arr;
                 event.buff_len = uart_buf_len;
                 uart_buf_len = 0;
                 if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
                 {
-                    ESP_LOGE(UART_TAG, "SEND TO QUEUE\n");
+                    //ESP_LOGE(UART_TAG, "SEND TO QUEUE\n");
                 }
                 else
                 {
@@ -324,6 +325,11 @@ void uart_rev(void *param)
                 }
             }
         }
+        else
+        {
+            vTaskDelay(5);
+        }
+        
     }
     vTaskDelete(NULL);
 }
