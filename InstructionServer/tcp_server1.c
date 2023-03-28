@@ -155,9 +155,9 @@ void tcp_server_task_1(void *pvParameters) {
                         case ACCEPTING:kState1 = ATTACHING;
 
                         case ATTACHING:
-                            printf("RX: %s\n", tcp_rx_buffer);
+                           // printf("RX: %s\n", tcp_rx_buffer);
                             heart_beat(len, tcp_rx_buffer); //当COM心跳成功发送，则置Falg为1
-                            printf("Flag1=%d,Flag3=%d\n", Flag1, Flag3);
+                           // printf("Flag1=%d,Flag3=%d\n", Flag1, Flag3);
 
                             if (Flag3 == 1 && Flag1 == 1 &&tcp_rx_buffer[0]=='{') {
                                 printf("\nCommand analysis!!!\n");
@@ -249,9 +249,9 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                         c2UartConfigFlag=true;
                     }
 
-                    if(c1UartConfigFlag==true&&c2UartConfigFlag==true){
-                        uart_task();
-                    }
+                    //if(c1UartConfigFlag==true&& c2UartConfigFlag==true){
+                        uart_task(ksock);
+                    //}
 
                     cJSON_Delete(pJsonRoot);
                 }

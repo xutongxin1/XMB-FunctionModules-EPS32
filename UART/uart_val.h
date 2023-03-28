@@ -46,7 +46,7 @@ typedef struct
     uint16_t buff_len;
 }events;
 
-typedef enum
+typedef enum 
 {
     UART_OK = 0,
     UART_ERROR = -1,
@@ -59,7 +59,7 @@ typedef enum
 
 
 
-typedef struct
+typedef struct 
 {
     uint8_t rx_pin;
     uint8_t tx_pin;

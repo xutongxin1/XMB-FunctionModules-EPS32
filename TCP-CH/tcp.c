@@ -41,11 +41,14 @@
 static const char *TCP_TAG = "TCP";
 static err_t get_connect_state(struct netconn *conn);
 static TaskHandle_t SubTask_Handle;
+static TaskHandle_t SubTask_Handle_1;
 static TaskHandle_t TCP_TASK_HANDLE[10];
+static uint8_t subtask_one_flag = 0;
 //static TaskHandle_t** TcpTaskHandle;
 static TcpTaskHandle_t TcpHandle = {
         .TaskNum = 0,
     };
+    
 // static uint16_t choose_port(uint8_t pin)
 // {
 //     switch (pin)
@@ -337,7 +340,16 @@ void tcp_server(void *Parameter)
                 /*Create Receive Subtask*/
                 subtask_flag = 1;
                 SubParam.newconn = &newconn;
-                xTaskCreate(tcp_server_subtask, "tcp_subtask", 4096, (void*)(&SubParam), 14, &SubTask_Handle);
+                if (!subtask_one_flag)
+                {
+                     xTaskCreate(tcp_server_subtask, "tcp_subtask", 4096, (void*)(&SubParam), 14, &SubTask_Handle);
+                    subtask_one_flag = 1;
+                }
+                else
+                {
+                    xTaskCreate(tcp_server_subtask, "tcp_subtask_1", 4096, (void*)(&SubParam), 14, &SubTask_Handle_1);
+                }
+                
             }
             /*Create send buffer*/
             struct netbuf *buf;
@@ -380,12 +392,13 @@ void tcp_server(void *Parameter)
                 else if (re_err == ERR_CLSD)
                 {
                     ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Param->port);
-
+                    //netconn_close(newconn);
                     // netbuf_delete(buf);
                     // netbuf_delete(buf2);
-                    break;
+                    //break;
                 }
             }
+        
             vTaskDelete(SubTask_Handle);
             subtask_flag = 0;
             netconn_close(newconn);

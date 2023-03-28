@@ -15,6 +15,6 @@ void SPI_Handle(void);
 void CAN_Handle(void);
 
 
-void uart_task(void);
+void uart_task(int ksock);
 
 #endif

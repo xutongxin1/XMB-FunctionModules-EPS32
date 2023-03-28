@@ -18,15 +18,23 @@ int uart_1_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
 
             uartconfig->pin.rx_pin=34;
             uartconfig->pin.tx_pin=25;
-            uartconfig->mode = Receive;
+            uartconfig->mode = All;
 
             //uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
 
-            //uartconfig->uart_num = UART_NUM_2;
+            uartconfig->uart_num = UART_NUM_1;
 
             item=cJSON_GetObjectItem(pu1,"mode");
             uartconfig->mode = item->valueint;
             printf("mode = %d\n",uartconfig->mode);
+            if(uartconfig->mode==1){
+                uartconfig->mode = All;
+            }else if(uartconfig->mode==2){
+                uartconfig->mode = All;
+                //Forward;
+            }else if(uartconfig->mode==0){
+                return 0;
+            }
 
             item=cJSON_GetObjectItem(pu1,"band");
             uartconfig->uart_config.baud_rate = item->valueint;
@@ -63,9 +71,21 @@ int uart_2_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
 
             item=cJSON_GetObjectItem(pu2,"mode");
             uartconfig->mode = item->valueint;
-            printf("mode = %d\n",uartconfig->mode);            
+            printf("mode = %d\n",uartconfig->mode); 
 
-            uartconfig->uart_num = UART_NUM_1;
+            uartconfig->uart_num = UART_NUM_2;
+            
+            if(uartconfig->mode==1){
+                uartconfig->mode = All;
+            }else if(uartconfig->mode==2){
+                uartconfig->mode = All;
+            }else if(uartconfig->mode==0){
+                return 0;
+            }
+            
+            uartconfig->pin.rx_pin=35;
+            uartconfig->pin.tx_pin=26;
+            uartconfig->mode = All;
 
             item=cJSON_GetObjectItem(pu2,"band");
             uartconfig->uart_config.baud_rate = item->valueint;
@@ -83,11 +103,6 @@ int uart_2_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
             uartconfig->uart_config.stop_bits = item->valueint;
             printf("stop = %d\n",uartconfig->uart_config.stop_bits);
             
-            uartconfig->pin.tx_pin=25;
-
-            uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
-
-            uartconfig->mode = Send;
             
             return 1;
         }
