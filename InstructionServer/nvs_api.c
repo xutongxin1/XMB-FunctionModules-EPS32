@@ -11,6 +11,7 @@ extern int sendFlag;
 extern char modeRet[5];
 extern int kSock1 ;
 int Command_Flag = 0;               //指令模式
+int Start_Flag = 1; 
 
 void nvs_flash_write(char mode_number, int listen_sock) {
     // Initialize NVS
@@ -106,7 +107,7 @@ int nvs_flash_read(int listen_sock){
         Command_Flag = mode_number - '0';
         printf("Command %d\n", Command_Flag);
 
-        if (Command_Flag != 0) {
+        if (Command_Flag != 0){
             modeRet[2] = Command_Flag + '0';
             do {
                 sendFlag = send(kSock1, modeRet, 5, 0);

@@ -14,66 +14,87 @@ TcpParam tcp_param;
 bool uart_handle_flag = false;
 extern uart_init_t c1;
 extern uart_init_t c2;
-extern bool c1UartConfigFlag; 
+extern bool c1UartConfigFlag;
 extern bool c2UartConfigFlag;
-extern const char kHeartRet[5]; //心跳包发送
+extern const char kHeartRet[5]; // 心跳包发送
+extern uint8_t UART_Falg;
+TcpTaskHandle_t *tcphand;
+TcpTaskHandle_t *tcphand1;
+extern TaskHandle_t TCP_TASK_HANDLE[10];
+extern TcpTaskHandle_t TcpHandle;
+//TcpTaskHandle_t *tcphand;
+//TcpTaskHandle_t *tcphand1;
 
-void DAP_Handle(void){}
-void UART_Handle(void){
+void DAP_Handle(void) {}
+void UART_Handle(void)
+{
     printf("\nuart_handle_flag\n");
-    uart_handle_flag=true;
+    uart_handle_flag = true;
 }
-void ADC_Handle(void){}
-void DAC_Handle(void){}
-void PWM_Collect_Handle(void){}
-void PWM_Simulation_Handle(void){}
-void I2C_Handle(void){}
-void SPI_Handle(void){}
-void CAN_Handle(void){}
-
+void ADC_Handle(void) {}
+void DAC_Handle(void) {}
+void PWM_Collect_Handle(void) {}
+void PWM_Simulation_Handle(void) {}
+void I2C_Handle(void) {}
+void SPI_Handle(void) {}
+void CAN_Handle(void) {}
 
 void uart_task(int ksock)
 {
-    int written=0;
-    TcpTaskHandle_t* tcphand;    
+    int written = 0;
+
     static QueueHandle_t uart_queue1 = NULL;
     static QueueHandle_t uart_queue = NULL;
+    static QueueHandle_t uart_queue2 = NULL;
+    static QueueHandle_t uart_queue3 = NULL;    
     uart_queue = xQueueCreate(10, sizeof(events));
     uart_queue1 = xQueueCreate(50, sizeof(events));
+    uart_queue2 = xQueueCreate(10, sizeof(events));
+    uart_queue3 = xQueueCreate(50, sizeof(events));    
     c1.rx_buff_queue = &uart_queue;
     c1.tx_buff_queue = &uart_queue1;
-    c2.tx_buff_queue = &uart_queue1;
-    c2.rx_buff_queue = &uart_queue;
+    c2.rx_buff_queue = &uart_queue2;
+    c2.tx_buff_queue = &uart_queue3;    
     printf("uart_queue rx: %p  uart_queue1 tx: %p\n", &uart_queue, &uart_queue1);
-    TaskHandle_t xHandle = NULL;
 
-    //xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);
-    if(c1UartConfigFlag==true){
+    // xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);
+    if (c1UartConfigFlag == true&&UART_Falg==0)
+    {
         Create_Uart_Task((void *)&c1);
-        static TcpParam tp = 
-        {
-        .rx_buff_queue = &uart_queue,
-        .tx_buff_queue = &uart_queue1,
-        .mode = ALL,
-        .port = CH2,
+        static TcpParam tp =
+            {
+                .rx_buff_queue = &uart_queue,
+                .tx_buff_queue = &uart_queue1,
+                .mode = ALL,
+                .port = CH2,
 
-        };
-        tcphand = TcpTaskCareate((void*) &tp);
-        c1UartConfigFlag=false;
-    }    
-    if(c2UartConfigFlag==true){
-        Create_Uart_Task((void *)&c2);
-        static TcpParam tp1 = 
-        {
-        .rx_buff_queue = &uart_queue,
-        .tx_buff_queue = &uart_queue1,
-        .mode = ALL,
-        .port = CH3,
-
-        };
-        tcphand = TcpTaskCareate((void*) &tp1);
-        c2UartConfigFlag=false;
+            };
+        tcphand = TcpTaskCareate((void *)&tp);
+        c1UartConfigFlag = false;
+    }else if(c1UartConfigFlag == true&&UART_Falg==1)
+    {
+        Create_Uart_Task((void *)&c1);
+        c1UartConfigFlag = false;
     }
+
+    if (c2UartConfigFlag == true&&UART_Falg==0)
+    {
+        Create_Uart_Task((void *)&c2);
+        static TcpParam tp1 =
+            {
+                .rx_buff_queue = &uart_queue2,
+                .tx_buff_queue = &uart_queue3,
+                .mode = ALL,
+                .port = CH3,
+
+            };
+        tcphand1 = TcpTaskCareate((void *)&tp1);
+        c2UartConfigFlag = false;
+    }else if(c2UartConfigFlag == true&&UART_Falg==1){
+        Create_Uart_Task((void *)&c2);
+        c2UartConfigFlag = false;
+    }
+
     // do{
     //     written=send(ksock, kHeartRet, 5, 0);
     //     printf("%d\n",written);
@@ -82,10 +103,8 @@ void uart_task(int ksock)
     // xTaskCreatePinnedToCore(uart_send, "uartt", 5120, (void *)&c2, 10, &xHandle, 1);
     // printf("create uartt \n");
 
-    do{
+    do
+    {
         written = send(ksock, "OK!\r\n", 5, 0);
-    }while(written<=0);
-
-
-
+    } while (written <= 0);
 }

@@ -1722,7 +1722,7 @@ static void co_main_thread(void *pvParameter) {
 static inline int co_thread_create(co_config_t *config) {
     int ret = xTaskCreate(co_main_thread, config->thread_name, config->stack_size, config,
                           config->thread_prio, NULL);
-    if (ret == pdPASS) {
+    if (ret == pdTRUE) {
         return ESP_OK;
     }
     ESP_LOGE(CO_TAG, "can not create corsacOTA thread:%d", ret);

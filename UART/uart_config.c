@@ -59,7 +59,7 @@ uint8_t UART_Falg = 0;
 //                 ESP_LOGE(UART_TAG, "event buffer = %s  \n", event.buff);
 //                 event.buff_len = uart_buf_len;
 //                 uart_buf_len = 0;
-//                 if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
+//                 if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdTRUE)
 //                 {
 //                     ESP_LOGE(UART_TAG, "SEND TO QUEUE\n");
 //                 }
@@ -193,8 +193,8 @@ uart_err_t uart_setup(uart_init_t *config)
         // return UART_NUM_EXISTED;
         UART_Falg = 1;
     }
-    // if (UART_Falg == 0)
-    // {
+    if (UART_Falg == 0)
+    {
         if (uart_state_register(config))
         {
             ESP_LOGE(UART_TAG, "uart register fail\r\n");
@@ -215,20 +215,22 @@ uart_err_t uart_setup(uart_init_t *config)
             ESP_LOGE(UART_TAG, "uart init fail\n");
             return UART_INSTALL_FAIL;
         }
-    // }
-    // else if (UART_Falg == 1)
-    // {
-    //     printf("UART_Falg:%d\n", UART_Falg);
-    //     UART_Falg = 0;
-    //     config->uart_num = tmp_num;
-    //     uart_set_baudrate (config->uart_num, config->uart_config.baud_rate);
-    //     uart_set_word_length(config->uart_num, config->uart_config.data_bits);
-    //     uart_set_parity(config->uart_num, config->uart_config.parity);
-    //     uart_set_stop_bits(config->uart_num,  config->uart_config.stop_bits);
-    //     uart_set_hw_flow_ctrl(config->uart_num, UART_HW_FLOWCTRL_DISABLE, 0);
-    //     uart_set_pin(config->uart_num, config->pin.tx_pin, config->pin.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    //     uart_driver_install (config->uart_num, UART_BUF_SIZE , UART_BUF_SIZE ,0,NULL,0);
-    // }
+    }
+    else if (UART_Falg == 1)
+    {
+        printf("UART_Falg:%d\n", UART_Falg);
+               
+        config->uart_num = tmp_num;
+        uart_state_register(config);
+        uart_driver_delete (config->uart_num );         
+        uart_set_baudrate (config->uart_num, config->uart_config.baud_rate);
+        uart_set_word_length(config->uart_num, config->uart_config.data_bits);
+        uart_set_parity(config->uart_num, config->uart_config.parity);
+        uart_set_stop_bits(config->uart_num,  config->uart_config.stop_bits);
+        uart_set_hw_flow_ctrl(config->uart_num, UART_HW_FLOWCTRL_DISABLE, 0);
+        uart_set_pin(config->uart_num, config->pin.tx_pin, config->pin.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+        uart_driver_install (config->uart_num, UART_BUF_SIZE , UART_BUF_SIZE ,0,NULL,0);
+    }
      return UART_OK;
 }
 
@@ -337,7 +339,7 @@ void uart_rev(void *param)
                 event.buff = event.buff_arr;
                 event.buff_len = uart_buf_len;
                 uart_buf_len = 0;
-                if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
+                if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdTRUE)
                 {
                     // ESP_LOGE(UART_TAG, "SEND TO QUEUE\n");
                 }
