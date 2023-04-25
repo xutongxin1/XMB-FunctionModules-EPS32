@@ -27,7 +27,7 @@ enum Port
 };
 
 enum tcp_mode {
-    SEND = 0,
+    SEND = 1,
     RECEIVE,
     ALL,
 };
@@ -50,14 +50,22 @@ typedef struct
 
 typedef struct 
 {
-    TaskHandle_t* TaskHandle[10];
-    uint8_t TaskNum;
+    TaskHandle_t* FatherTaskHandle;
+    uint8_t FatherTaskcount;
+    enum Port FatherTaskPort;
+    TaskHandle_t* SonTaskHandle;
+    uint8_t SonTaskcount;
+    char SonTaskname[16];
+    bool FatherTask_exists;
+    bool SonTask_exists;
+    enum tcp_mode mode;
 }TcpTaskHandle_t;
 
 void tcp_send_server(void *Parameter);
 void tcp_rev_server(void *Parameter);
 void tcp_server(void *Parameter);
 void tcp_test_server(void *Parameter);
-TcpTaskHandle_t* TcpTaskCareate(void *Parameter);
-uint8_t TcpTaskAllDelete(TcpTaskHandle_t* TcpHandle);
+uint8_t create_tcp_server(uint16_t port, struct netconn **conn);
+uint8_t TcpTaskAllDelete(TcpTaskHandle_t* TCP_TASK_HANDLE_delete);
+TcpTaskHandle_t* TcpTaskCreate(void *Parameter);
 #endif

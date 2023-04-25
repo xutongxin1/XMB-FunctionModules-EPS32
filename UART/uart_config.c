@@ -180,19 +180,24 @@ uart_err_t is_uart_num_free(uart_port_t uart_num)
     return UART_OK;
 }
 
+
+
+
 uart_err_t uart_setup(uart_init_t *config)
 {
     uart_port_t tmp_num = config->uart_num;
     config->uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     config->uart_config.source_clk = UART_SCLK_APB;
     config->uart_num = get_uart_free_num();
+
     // config->uart_num = config->uart_num;
-    if (is_uart_num_free(config->uart_num))
+    if (is_uart_num_free(UART_NUM_1))
     {
         // ESP_LOGE(UART_TAG, "uart NUM existed\r\n");
         // return UART_NUM_EXISTED;
         UART_Falg = 1;
     }
+
     if (UART_Falg == 0)
     {
         if (uart_state_register(config))
@@ -200,7 +205,7 @@ uart_err_t uart_setup(uart_init_t *config)
             ESP_LOGE(UART_TAG, "uart register fail\r\n");
             return UART_REGISTER_FAIL;
         }
-        if (uart_set_pin(config->uart_num, config->pin.tx_pin, config->pin.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE))
+        if (uart_set_pin(tmp_num, config->pin.tx_pin, config->pin.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE))
         {
             ESP_LOGE(UART_TAG, "uart set pin fail\r\n");
             return UART_SET_PAIN_FAIL;
@@ -218,18 +223,17 @@ uart_err_t uart_setup(uart_init_t *config)
     }
     else if (UART_Falg == 1)
     {
-        printf("UART_Falg:%d\n", UART_Falg);
-               
+        printf("UART_Falg:%d\n", UART_Falg);             
         config->uart_num = tmp_num;
         uart_state_register(config);
-        uart_driver_delete (config->uart_num );         
-        uart_set_baudrate (config->uart_num, config->uart_config.baud_rate);
+        uart_driver_delete(config->uart_num);         
+        uart_set_baudrate(config->uart_num, config->uart_config.baud_rate);
         uart_set_word_length(config->uart_num, config->uart_config.data_bits);
         uart_set_parity(config->uart_num, config->uart_config.parity);
         uart_set_stop_bits(config->uart_num,  config->uart_config.stop_bits);
         uart_set_hw_flow_ctrl(config->uart_num, UART_HW_FLOWCTRL_DISABLE, 0);
         uart_set_pin(config->uart_num, config->pin.tx_pin, config->pin.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-        uart_driver_install (config->uart_num, UART_BUF_SIZE , UART_BUF_SIZE ,0,NULL,0);
+        uart_driver_install(config->uart_num, UART_BUF_SIZE , UART_BUF_SIZE ,0,NULL,0);
     }
      return UART_OK;
 }

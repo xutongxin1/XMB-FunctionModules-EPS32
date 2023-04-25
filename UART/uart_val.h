@@ -31,7 +31,7 @@ typedef struct
 {
     QueueHandle_t* rx_buff_queue;
     QueueHandle_t* tx_buff_queue;
-    QueueHandle_t* forward_buff_queue;
+//    QueueHandle_t* forward_buff_queue;
     struct uart_pin pin;
     uart_port_t uart_num;
     enum UartIOMode mode;

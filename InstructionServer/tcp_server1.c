@@ -295,7 +295,7 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock)
                     if (str_attach != '0' && str_attach <= '9' && str_attach >= '1' && Command_Flag == 0)
                     {
                         printf("\n%c\n", str_attach);
-                        nvs_flash_write(str_attach, ksock);
+                        //nvs_flash_write(str_attach, ksock);
                         First_Ret[2] = str_attach;
                         Command_Flag=str_attach-'0';
                         do
