@@ -45,7 +45,7 @@ typedef struct
     TcpParam* TcpParam;
     struct netconn **conn;
     struct netconn **newconn;
-    uint8_t* task_flag;
+    uint8_t taskcount;
 }SubTcpParam;
 
 typedef struct 

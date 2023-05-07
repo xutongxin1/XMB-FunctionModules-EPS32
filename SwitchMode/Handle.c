@@ -24,7 +24,10 @@ extern int TcpHandle_FatherTask_current;
 extern TcpTaskHandle_t TCP_TASK_HANDLE[10];
 //TcpTaskHandle_t *tcphand;
 //TcpTaskHandle_t *tcphand1;
-
+QueueHandle_t uart_queue1 = NULL;
+QueueHandle_t uart_queue = NULL;
+QueueHandle_t uart_queue2 = NULL;
+QueueHandle_t uart_queue3 = NULL;
 
 void DAP_Handle(void) {}
 void UART_Handle(void) {
@@ -42,14 +45,6 @@ void CAN_Handle(void) {}
 void uart_task(int ksock) {
     int written = 0;
 
-    static QueueHandle_t uart_queue1 = NULL;
-    static QueueHandle_t uart_queue = NULL;
-    static QueueHandle_t uart_queue2 = NULL;
-    static QueueHandle_t uart_queue3 = NULL;
-    uart_queue = xQueueCreate(10, sizeof(events));
-    uart_queue1 = xQueueCreate(50, sizeof(events));
-    uart_queue2 = xQueueCreate(10, sizeof(events));
-    uart_queue3 = xQueueCreate(50, sizeof(events));
     c1.rx_buff_queue = &uart_queue;
     c1.tx_buff_queue = &uart_queue1;
     c2.rx_buff_queue = &uart_queue2;
@@ -58,8 +53,9 @@ void uart_task(int ksock) {
 
     // xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);
     if (c1UartConfigFlag == true) {
-        Create_Uart_Task((void *) &c1);
+
         if (UART_Falg == 1) {
+            uart_setup(&c1);
             TcpTaskAllDelete(TCP_TASK_HANDLE);
             printf("\nDelete\n");
              static TcpParam tp0 =
@@ -71,6 +67,7 @@ void uart_task(int ksock) {
                 };
             tcphand = TcpTaskCreate((void *) &tp0);
         }else if(UART_Falg == 0){
+            Create_Uart_Task((void *) &c1);
             static TcpParam tp0 =
                 {
                     .rx_buff_queue = &uart_queue,

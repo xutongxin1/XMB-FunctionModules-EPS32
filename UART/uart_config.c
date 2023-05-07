@@ -171,15 +171,13 @@ uart_err_t uart_setup(uart_init_t *config) {
     uart_port_t tmp_num = config->uart_num;
     config->uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     config->uart_config.source_clk = UART_SCLK_APB;
-    config->uart_num = get_uart_free_num();
+    //config->uart_num = get_uart_free_num();
 
     // config->uart_num = config->uart_num;
     if (is_uart_num_free(UART_NUM_1)) {
         // ESP_LOGE(UART_TAG, "uart NUM existed\r\n");
         // return UART_NUM_EXISTED;
         UART_Falg = 1;
-        Delete_All_Uart_Task();
-        printf("\nDelete Uart\n");
     }
 
     if (UART_Falg == 0) {
@@ -252,7 +250,9 @@ uart_err_t Create_Uart_Task(void *Parameter) {
                 &uart_task_handle[uart_manage.task_handle[id].task_num];
             uart_manage.task_handle[id].task_num++;
             break;
-        case All:sprintf(pcName, "Uart%s%s%d", allname, txname, uart_manage.task_num);
+        case All:
+
+            sprintf(pcName, "Uart%s%s%d", allname, txname, uart_manage.task_num);
             xTaskCreate(uart_send,
                         (const char *const) pcName,
                         5120,
@@ -263,6 +263,8 @@ uart_err_t Create_Uart_Task(void *Parameter) {
             uart_manage.task_handle[id].handle[uart_manage.task_handle[id].task_num] =
                 &uart_task_handle[uart_manage.task_num];
             uart_manage.task_handle[id].task_num++;
+
+
             sprintf(pcName, "Uart%s%s%d", allname, rxname, uart_manage.task_num);
             xTaskCreate(uart_rev,
                         (const char *const) pcName,
@@ -334,6 +336,7 @@ void uart_rev(void *param) {
                 if (xQueueSend(uart_queue, &event, pdMS_TO_TICKS(10)) == pdTRUE) {
                     // ESP_LOGE(UART_TAG, "SEND TO QUEUE\n");
                 } else {
+                    printf("rx queue failed\n");
                     ESP_LOGE(UART_TAG, "SEND TO QUEUE FAILD\n");
                 }
             }

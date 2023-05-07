@@ -221,17 +221,20 @@ void tcp_server_subtask(void *Parameter) {
     printf("tcp_rx_queue rx: %p\n", tcp_param->rx_buff_queue);
     //struct netconn *conn = Param->conn;
     struct netconn *newconn = *(Param->newconn);
-    while (TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTask_exists) {
+    while (TCP_TASK_HANDLE[Param->taskcount].SonTask_exists) {
 
         events event;
+        //printf("\nlife1\n");
         int ret = xQueueReceive(rx_buff_queue, &event, portMAX_DELAY);
+        //printf("\nlife2\n");
         if (ret == pdTRUE) {
             netconn_write(newconn, event.buff, event.buff_len, NETCONN_NOCOPY);
+            printf("rxbuff success");
         }
         if(newconn->state != NETCONN_CLOSE)
             break;
     }
-    TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTask_exists=false;
+    TCP_TASK_HANDLE[Param->taskcount].SonTask_exists=false;
     vTaskDelete(NULL);
 }
 
@@ -330,7 +333,7 @@ void tcp_server(void *Parameter) {
         .TcpParam = Param,
         .conn = &conn_All,
         .newconn = &newconn_All,
-
+        .taskcount = 0,
     };
     /* Tell connection to go into listening mode. */
     //netconn_listen(conn);
@@ -345,6 +348,7 @@ void tcp_server(void *Parameter) {
             if (!TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTask_exists) {
                 /*Create Receive Subtask*/
                 SubParam.newconn = &newconn_All;
+                SubParam.taskcount = TcpHandle_FatherTask_current;
                 sprintf(tmp, "tcp_subtask_%d", Param->port);
                 xTaskCreate(tcp_server_subtask,
                             tmp,
@@ -352,7 +356,7 @@ void tcp_server(void *Parameter) {
                             (void *) (&SubParam),
                             14,
                             TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTaskHandle);
-                if (TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTaskHandle != NULL) {
+                if (TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTask_exists != true) {
                     TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTask_exists = true;
                     TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTaskcount++;
                     //strcpy(TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTaskname, tmp);
@@ -371,13 +375,12 @@ void tcp_server(void *Parameter) {
                         tx_event_1.buff = data;
                         //tx_event_1.buff[tx_event_1.buff_len] = '\0';
                         // printf("tcp ： send buff:%s \n", tx_event_1.buff);
-                        if (newconn_All->state != NETCONN_CLOSE) {
-                            netbuf_delete(buf);
-                            break;
-                        }
-                        if (xQueueSend(tx_buff_queue, &tx_event_1, pdMS_TO_TICKS(10)) == pdPASS) {}
-                        else
+                        int xqueueerr=0;
+                        xqueueerr = xQueueSend(tx_buff_queue, &tx_event_1, pdMS_TO_TICKS(10)) ;
+                        if (xqueueerr==pdPASS) {}
+                        else {
                             ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
+                        }
                     } while ((netbuf_next(buf) >= 0));
                     netbuf_delete(buf);
 
