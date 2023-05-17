@@ -45,7 +45,7 @@ typedef struct
     TcpParam* TcpParam;
     struct netconn **conn;
     struct netconn **newconn;
-    uint8_t taskcount;
+    uint8_t son_task_current;
 }SubTcpParam;
 
 typedef struct 
@@ -61,11 +61,11 @@ typedef struct
     enum tcp_mode mode;
 }TcpTaskHandle_t;
 
-void tcp_send_server(void *Parameter);
-void tcp_rev_server(void *Parameter);
-void tcp_server(void *Parameter);
-void tcp_test_server(void *Parameter);
+void tcp_send_server(TcpParam *Parameter);
+void tcp_rev_server(TcpParam *Parameter);
+void tcp_server_rev_and_send(TcpParam *Parameter);
 uint8_t create_tcp_server(uint16_t port, struct netconn **conn);
 uint8_t TcpTaskAllDelete(TcpTaskHandle_t* TCP_TASK_HANDLE_delete);
-TcpTaskHandle_t* TcpTaskCreate(void *Parameter);
+TcpTaskHandle_t* TcpTaskCreate(TcpParam *Parameter);
+void tcp_server_subtask(SubTcpParam *Parameter);
 #endif

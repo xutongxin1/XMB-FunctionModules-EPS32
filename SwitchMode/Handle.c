@@ -17,10 +17,10 @@ extern uart_init_t c2;
 extern bool c1UartConfigFlag;
 extern bool c2UartConfigFlag;
 extern const char kHeartRet[5]; // 心跳包发送
-extern uint8_t UART_Falg;
+extern uint8_t uart_flag;
 TcpTaskHandle_t *tcphand;
 TcpTaskHandle_t *tcphand1;
-extern int TcpHandle_FatherTask_current;
+extern const int TcpHandle_FatherTask_current;
 extern TcpTaskHandle_t TCP_TASK_HANDLE[10];
 //TcpTaskHandle_t *tcphand;
 //TcpTaskHandle_t *tcphand1;
@@ -28,6 +28,7 @@ QueueHandle_t uart_queue1 = NULL;
 QueueHandle_t uart_queue = NULL;
 QueueHandle_t uart_queue2 = NULL;
 QueueHandle_t uart_queue3 = NULL;
+
 
 void DAP_Handle(void) {}
 void UART_Handle(void) {
@@ -45,19 +46,25 @@ void CAN_Handle(void) {}
 void uart_task(int ksock) {
     int written = 0;
 
+    static QueueHandle_t uart_queue1 = NULL;
+    static QueueHandle_t uart_queue = NULL;
+    static QueueHandle_t uart_queue2 = NULL;
+    static QueueHandle_t uart_queue3 = NULL;
+    uart_queue = xQueueCreate(10, sizeof(events));
+    uart_queue1 = xQueueCreate(50, sizeof(events));
+
     c1.rx_buff_queue = &uart_queue;
     c1.tx_buff_queue = &uart_queue1;
-    c2.rx_buff_queue = &uart_queue2;
-    c2.tx_buff_queue = &uart_queue3;
+    printf("c1 rx_buff_queue:%p\n",(c1.rx_buff_queue));
+    printf("c1 tx_buff_queue:%p\n",(c1.tx_buff_queue));
+
     printf("uart_queue rx: %p  uart_queue1 tx: %p\n", &uart_queue, &uart_queue1);
 
     // xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);
     if (c1UartConfigFlag == true) {
-
-        if (UART_Falg == 1) {
-            uart_setup(&c1);
+        Create_Uart_Task(&c1);
+        if (uart_flag == 1) {
             TcpTaskAllDelete(TCP_TASK_HANDLE);
-            printf("\nDelete\n");
              static TcpParam tp0 =
                 {
                     .rx_buff_queue = &uart_queue,
@@ -65,9 +72,8 @@ void uart_task(int ksock) {
                     .mode = ALL,
                     .port = CH2,
                 };
-            tcphand = TcpTaskCreate((void *) &tp0);
-        }else if(UART_Falg == 0){
-            Create_Uart_Task((void *) &c1);
+            tcphand = TcpTaskCreate(&tp0);
+        }else if(uart_flag == 0){
             static TcpParam tp0 =
                 {
                     .rx_buff_queue = &uart_queue,
@@ -75,34 +81,36 @@ void uart_task(int ksock) {
                     .mode = ALL,
                     .port = CH2,
                 };
-            tcphand = TcpTaskCreate((void *) &tp0);
+            printf("tp0 rx_buff_queue:%p\n",tp0.rx_buff_queue);
+            printf("tp0 tx_buff_queue:%p\n",tp0.tx_buff_queue);
+            tcphand = TcpTaskCreate(&tp0);
         }
         c1UartConfigFlag = false;
     }
 
-    if (c2UartConfigFlag == true ) {
-        Create_Uart_Task((void *) &c2);
-           static TcpParam tp2 =
-            {
-                .rx_buff_queue = &uart_queue2,
-                .tx_buff_queue = &uart_queue3,
-                .mode = ALL,
-                .port = CH3,
-            };
-        tcphand1 = TcpTaskCreate((void *) &tp2);
-        c2UartConfigFlag = false;
-    } else if (c2UartConfigFlag == true && UART_Falg == 1) {
-        Create_Uart_Task((void *) &c2);
-           static TcpParam tp2 =
-            {
-                .rx_buff_queue = &uart_queue2,
-                .tx_buff_queue = &uart_queue3,
-                .mode = ALL,
-                .port = CH3,
-            };
-        tcphand1 = TcpTaskCreate((void *) &tp2);
-        c2UartConfigFlag = false;
-    }
+//    if (c2UartConfigFlag == true ) {
+//        Create_Uart_Task(&c2);
+//           static TcpParam tp2 =
+//            {
+//                .rx_buff_queue = &uart_queue2,
+//                .tx_buff_queue = &uart_queue3,
+//                .mode = ALL,
+//                .port = CH3,
+//            };
+//        tcphand1 = TcpTaskCreate(&tp2);
+//        c2UartConfigFlag = false;
+//    } else if (c2UartConfigFlag == true && uart_flag == 1) {
+//        Create_Uart_Task(&c2);
+//           static TcpParam tp2 =
+//            {
+//                .rx_buff_queue = &uart_queue2,
+//                .tx_buff_queue = &uart_queue3,
+//                .mode = ALL,
+//                .port = CH3,
+//            };
+//        tcphand1 = TcpTaskCreate(&tp2);
+//        c2UartConfigFlag = false;
+//    }
 
     // do{
     //     written=send(ksock, kHeartRet, 5, 0);
