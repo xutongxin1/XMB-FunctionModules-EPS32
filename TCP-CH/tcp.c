@@ -371,7 +371,7 @@ void tcp_server_rev_and_send(TcpParam *Parameter) {
                 struct netbuf *buf;
                 re_err = (netconn_recv(newconn_All, &buf));
                 if (re_err == ERR_OK) {
-                    while ((netbuf_next(buf) > 0)) {
+                    do{
                         events tx_event_1;
                         netbuf_data(buf, &data, &tx_event_1.buff_len);
                         tx_event_1.buff = data;
@@ -380,13 +380,13 @@ void tcp_server_rev_and_send(TcpParam *Parameter) {
 //                            break;
 //                        }
                         if (xQueueSend(*(Parameter->tx_buff_queue), &tx_event_1, pdMS_TO_TICKS(10)) == pdPASS) {
-                            ESP_LOGI(TCP_TAG, "SEND TO QUEUE\n");
+
                         }
                         else
                             ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
 
-                    }
-                    netbuf_delete(buf);
+                    }while ((netbuf_next(buf) >= 0));
+                        netbuf_delete(buf);
 
                 } else if (re_err == ERR_CLSD) {
                     ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Parameter->port);
