@@ -302,7 +302,7 @@ uint8_t TcpTaskAllDelete(TcpTaskHandle_t *TCP_TASK_HANDLE_delete) {
     need_to_delete_taskcount = TcpHandle_FatherTask_current;
     for (int i = 0; i <= need_to_delete_taskcount; i++) {
         if ((TCP_TASK_HANDLE_delete[i].FatherTask_exists) == true) {
-            if (TCP_TASK_HANDLE_delete[i].SonTask_exists == true) {
+            if (TCP_TASK_HANDLE_delete[i].SonTaskHandle != NULL) {
                 TCP_TASK_HANDLE_delete[i].SonTask_exists = false;
                 vTaskDelete(*(TCP_TASK_HANDLE_delete[i].SonTaskHandle));
 

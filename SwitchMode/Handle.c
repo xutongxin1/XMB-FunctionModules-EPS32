@@ -62,8 +62,9 @@ void uart_task(int ksock) {
 
     // xTaskCreatePinnedToCore(uart_rev, "uartr", 5120, (void *)&c1, 10, &xHandle, 0);
     if (c1UartConfigFlag == true) {
-        Create_Uart_Task(&c1);
+
         if (uart_flag == 1) {
+            uart_setup(&c1);
             TcpTaskAllDelete(TCP_TASK_HANDLE);
              static TcpParam tp0 =
                 {
@@ -74,6 +75,7 @@ void uart_task(int ksock) {
                 };
             tcphand = TcpTaskCreate(&tp0);
         }else if(uart_flag == 0){
+            Create_Uart_Task(&c1);
             static TcpParam tp0 =
                 {
                     .rx_buff_queue = &uart_queue,
@@ -81,8 +83,7 @@ void uart_task(int ksock) {
                     .mode = ALL,
                     .port = CH2,
                 };
-            printf("tp0 rx_buff_queue:%p\n",tp0.rx_buff_queue);
-            printf("tp0 tx_buff_queue:%p\n",tp0.tx_buff_queue);
+
             tcphand = TcpTaskCreate(&tp0);
         }
         c1UartConfigFlag = false;
