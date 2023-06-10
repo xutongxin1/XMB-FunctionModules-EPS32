@@ -23,7 +23,7 @@
 #include <string.h>
 #include <sys/param.h>
 
-#include "corsacOTA.h"
+#include "corsacOTA.h.bak"
 
 #include "esp_log.h"
 
@@ -623,8 +623,8 @@ static const char *co_ota_error_to_msg(esp_err_t err) {
         return "Invalid partition info";
     case ESP_ERR_NOT_FOUND:
         return "OTA partition not found";
-    case ESP_ERR_FLASH_OP_TIMEOUT:
-    case ESP_ERR_FLASH_OP_FAIL:
+    case ESP_ERR_TIMEOUT:
+    case ESP_ERR_FLASH_BASE:
         return "Flash write failed";
     case ESP_ERR_INVALID_STATE:
         return "Flash encryption is enabled";
@@ -763,7 +763,7 @@ static void co_websocket_process_binary(uint8_t *data, size_t len) {
 
         global_cb->ota.last_index_offset = global_cb->ota.offset;
 
-        snprintf(res, 32, "state=%s&offset=%d", is_done ? "done" : "ready", global_cb->ota.offset);
+        snprintf(res, 32, "state=%s&offset=%d", is_done ? "done" : "ready", (int)global_cb->ota.offset);
 
         if (is_done) {
             err_msg = co_ota_end();
@@ -1157,7 +1157,7 @@ static void co_http_error_400_response(co_cb_t *cb, co_socket_cb_t *scb) {
 #define WS_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 int co_sha1(const unsigned char *src, size_t src_len, unsigned char *dst) {
-    return mbedtls_sha1_ret(src, src_len, dst);
+    return mbedtls_sha1(src, src_len, dst);
 }
 
 int co_base64_encode(unsigned char *dst, size_t dst_len, size_t *written_len, unsigned char *src, size_t src_len) {
@@ -1722,7 +1722,7 @@ static void co_main_thread(void *pvParameter) {
 static inline int co_thread_create(co_config_t *config) {
     int ret = xTaskCreate(co_main_thread, config->thread_name, config->stack_size, config,
                           config->thread_prio, NULL);
-    if (ret == pdPASS) {
+    if (ret == pdTRUE) {
         return ESP_OK;
     }
     ESP_LOGE(CO_TAG, "can not create corsacOTA thread:%d", ret);
