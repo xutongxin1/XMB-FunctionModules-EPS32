@@ -263,18 +263,18 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
                 //printf("\nthe data is %c", *strattach);
                 // printf("\nfree\n");
                 
-                if(str_command==220)
+                if(str_command==220)//二级配置指令
                 {   
-                    if(uart_c_1_parameter_analysis(pattach,&c1)){
-                        c1UartConfigFlag=true;
+                    if(uart_c_1_parameter_analysis(pattach,&c1)){//通道一串口 2 接收到命令
+                        c1UartConfigFlag=true;//确定配置通道一
                     }
                     
-                    if(uart_c_3_parameter_analysis(pattach,&c3)){
-                        c3UartConfigFlag=true;
+                    if(uart_c_3_parameter_analysis(pattach,&c3)){//通道三 串口 0 接收到命令
+                        c3UartConfigFlag=true;//确定配置通道三
                     }
 
-                    if(c1UartConfigFlag==true&&c3UartConfigFlag==true){
-                        if(uart_c_2_parameter_mode(pattach,&c2,&c1,&c3)){
+                    if(c1UartConfigFlag==true&&c3UartConfigFlag==true){//一三两个通道都需要配置
+                        if(uart_c_2_parameter_mode(pattach,&c2,&c1,&c3)){//启用通道二
                             printf("c2 setup:\n");
                             uart_setup(&c2);
                         }
@@ -316,7 +316,7 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock) {
     }
 }
 
-int uart_c_1_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion* uartconfig) {
+int uart_c_1_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion* uartconfig) {//通道1  串口2 字符解析
     char *str_c_1 = NULL;
     unsigned char str_C1 = '0';
     cJSON *pc1 = cJSON_GetObjectItem(attach_rx_buffer, "c_1"); // 解析c1字段内容
@@ -326,9 +326,8 @@ int uart_c_1_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion
          {
             cJSON * item;
 
-            uartconfig->pin.CH=CH1;
-
-            uartconfig->pin.MODE = RX;
+            uartconfig->pin.CH=CH1;//通道一
+            uartconfig->pin.MODE = RX;//接收模式//通道1 只收不发
 
             uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
 
@@ -338,20 +337,18 @@ int uart_c_1_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion
             uartconfig->mode = item->valueint;
             printf("mode = %d\n",uartconfig->mode);
 
-            if(uartconfig->mode!=Input&&uartconfig->mode!=SingleInput){
+            if(uartconfig->mode!=Input&&uartconfig->mode!=SingleInput){//通道1 只能使用输入或者独占输入
                 return 0;
             }
-
             item=cJSON_GetObjectItem(pc1,"band");
             uartconfig->uart_config.baud_rate = item->valueint;
             printf("band = %d\n",uartconfig->uart_config.baud_rate);
-
             item=cJSON_GetObjectItem(pc1,"parity");
             uartconfig->uart_config.parity = item->valueint;
             printf("parity = %d\n",uartconfig->uart_config.parity);
 
             item=cJSON_GetObjectItem(pc1,"data");
-            uartconfig->uart_config.data_bits = (item->valueint)-5;
+            uartconfig->uart_config.data_bits = (item->valueint)-5; // 为什么减 5
             printf("data = %d\n",uartconfig->uart_config.data_bits);
 
             item=cJSON_GetObjectItem(pc1,"stop");
@@ -365,10 +362,10 @@ int uart_c_1_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion
 }
 
 int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* c2,struct uart_configrantion* c1,struct uart_configrantion* c3)
-{
+{//通道2可以配置为只收或只发或收发   //  串口 2
     int strC2=0;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pc2 = cJSON_GetObjectItem(attach_rx_buffer, "c_2"); // 解析c1字段内容
+    cJSON *pc2 = cJSON_GetObjectItem(attach_rx_buffer, "c_2"); // 解析c2字段内容
     printf("\nc2:\n");
     //是否为json格式数据
         // printf("\nlife1\n");
@@ -380,7 +377,7 @@ int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* c2
             c2->mode = item->valueint;
             printf("mode = %d\n",c2->mode);
             
-            if(c2->mode!=Follow1Output&&c2->mode!=Follow3Input){
+            if(c2->mode!=Follow1Output&&c2->mode!=Follow3Input){//跟随通道 1 输入或者跟随通道 3 输出
                 return 0;
             }
             
@@ -390,7 +387,7 @@ int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* c2
 
             switch (c2->mode)
             {
-            case 5:
+            case 5://发送模式//follow1output
             c2->uart_config.baud_rate = c1->uart_config.baud_rate;
             printf("baud=%d\n",c2->uart_config.baud_rate);
             c2->uart_config.parity = c1->uart_config.parity;
@@ -402,7 +399,7 @@ int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* c2
             c2->pin.MODE = TX;
             break;
 
-            case 6:
+            case 6://接收模式//follow3input
             c2->uart_config.baud_rate = c3->uart_config.baud_rate ;
             printf("baud=%d\n",c2->uart_config.baud_rate);
             c2->uart_config.parity = c3->uart_config.parity;
@@ -413,6 +410,7 @@ int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* c2
             printf("stop=%d\n",c2->uart_config.stop_bits);
             c2->pin.MODE = RX;
             break;
+                TODO:  //case ://转发模式
 
             default:
                 break;
@@ -426,7 +424,7 @@ int uart_c_2_parameter_mode(void *attach_rx_buffer,struct uart_configrantion* c2
 int uart_c_3_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion* uartconfig) {
     char *str_c_3 = NULL;
     //首先整体判断是否为一个json格式的数据
-    cJSON *pc3 = cJSON_GetObjectItem(attach_rx_buffer, "c_3"); // 解析c1字段内容
+    cJSON *pc3 = cJSON_GetObjectItem(attach_rx_buffer, "c_3"); // 解析通道3 字段内容
     printf("\nc3:\n");
         //是否指令为空
         if (pc3 != NULL)
@@ -439,9 +437,9 @@ int uart_c_3_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion
             uartconfig->mode = item->valueint;
             printf("mode = %d\n",uartconfig->mode);            
 
-            uartconfig->uart_num = UART_NUM_0;
+            uartconfig->uart_num = UART_NUM_0;//通道三对应的是串口 0
 
-            if(uartconfig->mode!=Output&&uartconfig->mode!=SingleOutput){
+            if(uartconfig->mode!=Output&&uartconfig->mode!=SingleOutput){//通道3只能配置为输出或者独占输出
                 return 0;
             }
 
@@ -465,7 +463,7 @@ int uart_c_3_parameter_analysis(void *attach_rx_buffer,struct uart_configrantion
 
             uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
 
-            uartconfig->pin.MODE = TX;
+            uartconfig->pin.MODE = TX;//输出模式
 
             return 1;
         }

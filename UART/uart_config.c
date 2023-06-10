@@ -45,7 +45,7 @@ void uart_rev(void *uartParameter)
         }
 
         uart_buf_len = uart_buf_len > UART_BUF_SIZE ? UART_BUF_SIZE : uart_buf_len;
-        uart_buf_len = uart_read_bytes(uart_num, buffer, uart_buf_len, pdMS_TO_TICKS(5));
+        uart_buf_len = uart_read_bytes(uart_num, buffer, uart_buf_len, pdMS_TO_TICKS(5));// 读取串口收到的东西
         buffer[uart_buf_len] = '\0';
         ESP_LOGE(UART_TAG, "buffer = %s  \nuart_buf_len = %d\n", buffer, uart_buf_len);
         if (uart_buf_len != 0)
@@ -82,7 +82,7 @@ void uart_send(void *uartParameter)
             ;
         if (event.buff_len != 0)
         {
-            uart_write_bytes(uart_num, (const char *)event.uart_buffer, event.buff_len);
+            uart_write_bytes(uart_num, (const char *)event.uart_buffer, event.buff_len);//发送
         }
     }
     vTaskDelete(NULL);
