@@ -145,6 +145,7 @@ uart_err_t uart_state_register(uart_init_t *config) {
     return UART_OK;
 }
 
+
 uart_port_t get_uart_free_num() {
     if (is_uart_num_free(UART_NUM_1) == UART_OK) {
         return UART_NUM_1;
@@ -162,6 +163,7 @@ uart_err_t is_uart_num_free(uart_port_t uart_num) {
     for (int i = 0; i < uart_manage.existed_num; i++) {
         if (uart_manage.existed_port[i] == uart_num) {
             return UART_NUM_EXISTED;
+
         }
     }
     return UART_OK;
@@ -194,6 +196,7 @@ uart_err_t uart_setup(uart_init_t *config)
         }
         if (uart_set_pin(tmp_num, config->pin.tx_pin, config->pin.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE))
         {
+
             ESP_LOGE(UART_TAG, "uart set pin fail\r\n");
             return UART_SET_PAIN_FAIL;
         }
@@ -204,6 +207,7 @@ uart_err_t uart_setup(uart_init_t *config)
         if (uart_driver_install(config->uart_num, UART_BUF_SIZE, UART_BUF_SIZE, 0, NULL, 0)) {
             ESP_LOGE(UART_TAG, "uart init fail\n");
             return UART_INSTALL_FAIL;
+
         }
     }
     else if (uart_flag == 1)

@@ -272,6 +272,7 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock)
                     if (uart_1_parameter_analysis(pattach, &c1))
                     {
                         c1UartConfigFlag = true;
+
                     }
 
                     if (uart_2_parameter_analysis(pattach, &c2))
@@ -331,9 +332,11 @@ void command_json_analysis(unsigned int len, void *rx_buffer, int ksock)
     }
 }
 
+
 void attach_status(char str_attach)
 {
     int attach = (int)str_attach;
+
     attach = attach - '0';
     switch (attach)
     {
