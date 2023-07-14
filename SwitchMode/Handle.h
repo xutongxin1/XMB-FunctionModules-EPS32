@@ -4,17 +4,17 @@
 
 
 
-void DAP_Handle(void);
-void UART_Handle(void);
-void ADC_Handle(void);
-void DAC_Handle(void);
-void PWM_Collect_Handle(void);
-void PWM_Simulation_Handle(void);
-void I2C_Handle(void);
-void SPI_Handle(void);
-void CAN_Handle(void);
+void DAPHandle(void);
+void UartHandle(void);
+void ADCHandle(void);
+void DACHandle(void);
+void PwmCollectHandle(void);
+void PwmSimulationHandle(void);
+void I2CHandle(void);
+void SpiHandle(void);
+void CanHandle(void);
 
 
-void uart_task(int ksock);
+void UartTask(int ksock);
 
 #endif

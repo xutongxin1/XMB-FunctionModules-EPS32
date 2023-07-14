@@ -1,5 +1,5 @@
 #include "nvs_flash.h"
-#include "InstructionServer/nvs_api.h"
+#include "nvs_api.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -7,13 +7,13 @@
 #include <lwip/netdb.h>
 
 
-extern int sendFlag;
+int send_bytes;
 extern char modeRet[5];
 extern int kSock1 ;
 int Command_Flag = 0;               //指令模式
 int Start_Flag = 1; 
-
-void nvs_flash_write(char mode_number, int listen_sock) {
+//写入flash
+void NvsFlashWrite(char mode_number) {
     // Initialize NVS
     nvs_flash_erase();
     esp_err_t err = nvs_flash_init();
@@ -61,8 +61,8 @@ void nvs_flash_write(char mode_number, int listen_sock) {
     // }
 }
 
-
-int nvs_flash_read(int listen_sock){
+//读取flash内容
+int NvsFlashRead() {
 
 
     // Initialize NVS
@@ -110,11 +110,11 @@ int nvs_flash_read(int listen_sock){
         if (Command_Flag != 0){
             modeRet[2] = Command_Flag + '0';
             do {
-                sendFlag = send(kSock1, modeRet, 5, 0);
+                send_bytes = send(kSock1, modeRet, 5, 0);
 
-                printf("\nsend RF%C finish%d\n", modeRet[2], sendFlag);
+                printf("\nsend RF%C finish%d\n", modeRet[2], send_bytes);
 
-            } while (sendFlag < 0);
+            } while (send_bytes < 0);
             Command_Flag = Command_Flag + '0';
             //printf("\nRF send finish\n");
             return 1;

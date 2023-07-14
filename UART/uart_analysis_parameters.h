@@ -4,7 +4,7 @@
 #include "UART/uart_val.h"
 
 
-int uart_1_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig);
-int uart_2_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig); 
+int Uart1ParameterAnalysis(void *attach_rx_buffer, UartInitT* uart_config);
+int Uart2ParameterAnalysis(void *attach_rx_buffer, UartInitT* uart_config);
 
 #endif

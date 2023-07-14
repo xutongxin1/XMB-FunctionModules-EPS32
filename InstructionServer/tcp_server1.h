@@ -18,38 +18,39 @@
 //   struct uart_pin pin;
 //   uart_port_t uart_num;
 //   enum UartIOMode mode;
-//   uart_config_t uart_config;
+//   uart_config_t uart_config_;
 
 // } ;
-#include "UART/uart_val.h"
-#include "UART/uart_config.h"
 
-enum state_t {
-  ACCEPTING,
-  ATTACHING,
-  EMULATING,
-  EL_DATA_PHASE
-};
+//#include "UART/uart_config.h"
+#include "../wireless-esp8266-dap/WirelessDAP_main/usbip_server.h"
 
-enum reset_handle_t
+//enum StateT {
+//  ACCEPTING,
+//  ATTACHING,
+//  EMULATING,
+//  EL_DATA_PHASE
+//};
+
+enum ResetHandleT
 {
     NO_SIGNAL = 0,
     RESET_HANDLE = 1,
     DELETE_HANDLE = 2,
-};///////////
+};
 
-void tcp_server_task_1(void *pvParameters);
-void heart_beat(unsigned int len, char *rx_buffer);
-void command_json_analysis(unsigned int len, void *rx_buffer, int ksock);
-void attach_status(char str_attach);
+void TcpCommandPipeTask();
+void HeartBeat(unsigned int len, char *rx_buffer);
+void CommandJsonAnalysis(unsigned int len, void *rx_buffer, int ksock);
+void AttachStatus(char str_attach);
 
-enum Command_mode {
+enum CommandMode {
   DAP = 1,
   UART,
   ADC,
   DAC,
-  PWM_Collect,
-  PWM_Simulation,
+  PWM_COLLECT,
+  PWM_SIMULATION,
   I2C,
   SPI,
   CAN

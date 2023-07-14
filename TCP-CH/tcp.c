@@ -39,20 +39,20 @@
 #endif
 #define MY_IP_ADDR(...) IP4_ADDR(__VA_ARGS__)
 static const char *TCP_TAG = "TCP";
-static err_t get_connect_state(struct netconn *conn);
+static err_t GetConnectState(struct netconn *conn);
 //static TaskHandle_t* SubTask_Handle;
 //static TaskHandle_t SubTask_Handle_1;
 struct netconn *conn_All = NULL;
 struct netconn *newconn_All = NULL;
 //static uint8_t subtask_one_flag = 0;
 //static TaskHandle_t** TcpTaskHandle;
-unsigned int TcpHandle_FatherTask_current = 0;
-TcpTaskHandle_t TCP_TASK_HANDLE[12];
+unsigned int kTcpHandleFatherTaskCurrent = 0;
+TcpTaskHandleT TCP_TASK_HANDLE[12];
 SubTcpParam SubParam = {
-    .TcpParam = NULL,
+    .tcp_param_ = NULL,
     .conn = NULL,
-    .newconn = NULL,
-    .son_task_current = 0,
+    .newconn_ = NULL,
+    .son_task_current_ = 0,
 };
 // static uint16_t choose_port(uint8_t pin)
 // {
@@ -76,7 +76,7 @@ SubTcpParam SubParam = {
  * @param conn A netconn descriptor
  * @return ERR_OK if bound, any other err_t on failure
  */
-uint8_t create_tcp_server(uint16_t port, struct netconn **conn) {
+uint8_t CreateTcpServer(uint16_t port, struct netconn **conn) {
     while (*conn == NULL) {
         *conn = netconn_new(NETCONN_TCP);
     }
@@ -90,10 +90,10 @@ uint8_t create_tcp_server(uint16_t port, struct netconn **conn) {
     return ESP_OK;
 }
 
-void tcp_send_server(TcpParam *Parameter) {
-    // printf("Parameter = %p  \n", Parameter);
-    TcpParam *Param = Parameter;
-    // printf("Param = %p  \n", Param);
+void TcpSendServer(TcpParam *parameter) {
+    // printf("parameter = %p  \n", parameter);
+    TcpParam *param = parameter;
+    // printf("param = %p  \n", param);
     struct netconn *conn = NULL;
     // printf("conn\n");
     struct netconn *newconn = NULL;
@@ -102,24 +102,24 @@ void tcp_send_server(TcpParam *Parameter) {
     // uint16_t len = 0;
     // void *recv_data;
     // recv_data = (void *)pvPortMalloc(TCP_BUF_SIZE);
-    // printf("Param->uart_queue = %p  \n*Param->uart_queue = %p\n", Param->uart_queue, *Param->uart_queue);
-    QueueHandle_t buff_queue = *Param->tx_buff_queue;
+    // printf("param->uart_queue = %p  \n*param->uart_queue = %p\n", param->uart_queue, *param->uart_queue);
+    QueueHandle_t buff_queue = *param->tx_buff_queue_;
     //tcpip_adapter_ip_info_t ip_info;
     /* Create a new connection identifier. */
     /* Bind connection to well known port number 7. */
-    create_tcp_server(Param->port, &conn);
+    CreateTcpServer(param->port, &conn);
     // while (conn == NULL )
     // {
     //     conn = netconn_new(NETCONN_TCP);
     // }
     // // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
-    // //netconn_bind(*conn, &ip_info.ip, Param->port);
+    // //netconn_bind(*conn, &ip_info.ip, param->port);
     //  /* Bind connection to well known port number 7. */
-    // netconn_bind(conn, IP_ADDR_ANY, Param->port);
+    // netconn_bind(conn, IP_ADDR_ANY, param->port);
     // netconn_listen(conn); /* Grab new connection. */
     // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
     //MY_IP_ADDR(&ip_info.ip, TCP_IP_ADDRESS);
-    // netconn_bind(conn, &ip_info.ip, Param->port);
+    // netconn_bind(conn, &ip_info.ip, param->port);
 
     /* Tell connection to go into listening mode. */
     //netconn_listen(conn);
@@ -142,25 +142,25 @@ void tcp_send_server(TcpParam *Parameter) {
                 if (re_err == ERR_OK) {
                     do {
                         events event;
-                        netbuf_data(buf, &data, &event.buff_len);
-                        event.buff = data;
+                        netbuf_data(buf, &data, &event.buff_len_);
+                        event.buff_ = data;
                         if (xQueueSend(buff_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
-                            ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
+                            ESP_LOGE(TCP_TAG, "TCP_SEND TO QUEUE FAILD\n");
                     } while ((netbuf_next(buf) >= 0));
                     netbuf_delete(buf2);
                     re_err = (netconn_recv(newconn, &buf2));
                     if (re_err == ERR_OK) {
                         do {
                             events event;
-                            netbuf_data(buf2, &data, &event.buff_len);
-                            event.buff = data;
+                            netbuf_data(buf2, &data, &event.buff_len_);
+                            event.buff_ = data;
                             if (xQueueSend(buff_queue, &event, pdMS_TO_TICKS(10)) == pdPASS)
-                                ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
+                                ESP_LOGE(TCP_TAG, "TCP_SEND TO QUEUE FAILD\n");
                         } while ((netbuf_next(buf2) >= 0));
                         netbuf_delete(buf);
                     }
                 } else if (re_err == ERR_CLSD) {
-                    ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Param->port);
+                    ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", param->port);
                     //netbuf_delete(buf);
                     //netbuf_delete(buf2);
                     break;
@@ -173,15 +173,15 @@ void tcp_send_server(TcpParam *Parameter) {
     }
     vTaskDelete(NULL);
 }
-void tcp_rev_server(TcpParam *Parameter) {
-    TcpParam *Param = Parameter;
+void TcpRevServer(TcpParam *parameter) {
+    TcpParam *param = parameter;
     struct netconn *conn = NULL;
     struct netconn *newconn = NULL;
     // err_t re_err = 0;
-    QueueHandle_t buff_queue = *Param->rx_buff_queue;
+    QueueHandle_t buff_queue = *param->rx_buff_queue_;
 
     /* Create a new connection identifier. */
-    create_tcp_server(Param->port, &conn);
+    CreateTcpServer(param->port, &conn);
     // while (conn == NULL)
     // {
     //     conn = netconn_new(NETCONN_TCP);
@@ -191,11 +191,11 @@ void tcp_rev_server(TcpParam *Parameter) {
     // tcpip_adapter_ip_info_t ip_info;
     // MY_IP_ADDR(&ip_info.ip, TCP_IP_ADDRESS);
     // // netconn_set_nonblocking(conn, NETCONN_FLAG_NON_BLOCKING);
-    // netconn_bind(conn, &ip_info.ip, Param->port);
-    // netconn_bind(conn, IP4_ADDR_ANY, Param->port);
+    // netconn_bind(conn, &ip_info.ip, param->port);
+    // netconn_bind(conn, IP4_ADDR_ANY, param->port);
     /* Tell connection to go into listening mode. */
     //netconn_listen(conn);
-    //printf("PORT: %d\nLISTENING.....\n", Param->port);
+    //printf("PORT: %d\nLISTENING.....\n", param->port);
     /* Grab new connection. */
     while (1) {
         /* Process the new connection. */
@@ -204,13 +204,13 @@ void tcp_rev_server(TcpParam *Parameter) {
                 events event;
                 int ret = xQueueReceive(buff_queue, &event, portMAX_DELAY);
                 if (ret == pdTRUE) {
-                    netconn_write(newconn, event.buff, event.buff_len, NETCONN_NOCOPY);
+                    netconn_write(newconn, event.buff_, event.buff_len_, NETCONN_NOCOPY);
                 }
-                if (get_connect_state(newconn) == ERR_CLSD) {
+                if (GetConnectState(newconn) == ERR_CLSD) {
                     netconn_close(newconn);
                     netconn_delete(newconn);
                     netconn_listen(conn);
-                    ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Param->port);
+                    ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", param->port);
                     break;
                 }
             }
@@ -219,103 +219,103 @@ void tcp_rev_server(TcpParam *Parameter) {
     vTaskDelete(NULL);
 }
 
-void tcp_server_subtask(SubTcpParam *Parameter) {
+void TcpServerSubtask(SubTcpParam *parameter) {
 
-    TcpParam *tcp_param = Parameter->TcpParam;
-    QueueHandle_t rx_buff_queue = *tcp_param->rx_buff_queue;
-    printf("tcp_rx_queue rx: %p\n", tcp_param->rx_buff_queue);
+    TcpParam *tcp_param = parameter->tcp_param_;
+    QueueHandle_t rx_buff_queue = *tcp_param->rx_buff_queue_;
+    printf("tcp_rx_queue rx: %p\n", tcp_param->rx_buff_queue_);
     //struct netconn *conn = Param->conn;
-    struct netconn *newconn = *(Parameter->newconn);
-    while (TCP_TASK_HANDLE[Parameter->son_task_current].SonTask_exists) {
+    struct netconn *newconn = *(parameter->newconn_);
+    while (TCP_TASK_HANDLE[parameter->son_task_current_].son_task_exists_) {
 
         events event;
         int ret = xQueueReceive(rx_buff_queue, &event, portMAX_DELAY);
         if (ret == pdTRUE) {
-            netconn_write(newconn, event.buff, event.buff_len, NETCONN_NOCOPY);
+            netconn_write(newconn, event.buff_, event.buff_len_, NETCONN_NOCOPY);
         }
     }
     vTaskDelete(NULL);
 }
 
-TcpTaskHandle_t *TcpTaskCreate(TcpParam *Parameter) {
-    printf("Parameter rx_buff_queue:%p\n",Parameter->rx_buff_queue);
-    printf("Parameter tx_buff_queue:%p\n",Parameter->tx_buff_queue);
-    printf("Param:%p\n",Parameter);
-    const char allname[] = "ALL";
-    const char rxname[] = "Rec";
-    const char txname[] = "Tran";
-    char pcName[18];
-    printf("\nParam->mode:%d\n", Parameter->mode);
-    switch (Parameter->mode) {
-        case SEND:sprintf(pcName, "Tcp%s%d", txname, TcpHandle_FatherTask_current);
-            xTaskCreatePinnedToCore(tcp_send_server,
-                                    (const char *const) pcName,
+TcpTaskHandleT *TcpTaskCreate(TcpParam *parameter) {
+    printf("parameter rx_buff_queue_:%p\n", parameter->rx_buff_queue_);
+    printf("parameter tx_buff_queue_:%p\n", parameter->tx_buff_queue_);
+    printf("Param:%p\n", parameter);
+    const char kAllname[] = "ALL";
+    const char kRxname[] = "Rec";
+    const char kTxname[] = "Tran";
+    char pc_name[18];
+    printf("\nParam->mode:%d\n", parameter->mode);
+    switch (parameter->mode) {
+        case TCP_SEND:sprintf(pc_name, "Tcp%s%d", kTxname, kTcpHandleFatherTaskCurrent);
+            xTaskCreatePinnedToCore((TaskFunction_t) TcpSendServer,
+                                    (const char *const) pc_name,
                                     5120,
-                                    Parameter,
+                                    parameter,
                                     14,
-                                    TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskHandle,
+                                    TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_handle_,
                                     0);
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTask_exists = true;
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].mode = SEND;
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskPort = Parameter->port;
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskcount = TcpHandle_FatherTask_current;
-            TcpHandle_FatherTask_current++;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_exists_ = true;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].mode = TCP_SEND;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_port_ = parameter->port;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_taskcount_ = kTcpHandleFatherTaskCurrent;
+            kTcpHandleFatherTaskCurrent++;
             break;
-        case RECEIVE:sprintf(pcName, "Tcp%s%d", rxname, TcpHandle_FatherTask_current);
-            xTaskCreatePinnedToCore(tcp_rev_server,
-                                    (const char *const) pcName,
+        case TCP_RECEIVE:sprintf(pc_name, "Tcp%s%d", kRxname, kTcpHandleFatherTaskCurrent);
+            xTaskCreatePinnedToCore((TaskFunction_t) TcpRevServer,
+                                    (const char *const) pc_name,
                                     5120,
-                                    Parameter,
+                                    parameter,
                                     14,
-                                    TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskHandle,
+                                    TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_handle_,
                                     0);
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTask_exists = true;
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].mode = RECEIVE;
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskPort = Parameter->port;
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskcount = TcpHandle_FatherTask_current;
-            TcpHandle_FatherTask_current++;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_exists_ = true;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].mode = TCP_RECEIVE;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_port_ = parameter->port;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_taskcount_ = kTcpHandleFatherTaskCurrent;
+            kTcpHandleFatherTaskCurrent++;
             break;
-        case ALL:sprintf(pcName, "Tcp%s%d", allname, TcpHandle_FatherTask_current);
-            printf("%s", pcName);
-            xTaskCreatePinnedToCore(tcp_server_rev_and_send,
-                                    (const char *const) pcName,
+        case TCP_ALL:sprintf(pc_name, "Tcp%s%d", kAllname, kTcpHandleFatherTaskCurrent);
+            printf("%s", pc_name);
+            xTaskCreatePinnedToCore((TaskFunction_t) TcpServerRevAndSend,
+                                    (const char *const) pc_name,
                                     5120,
-                                    Parameter,
+                                    parameter,
                                     14,
-                                    TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskHandle,
+                                    TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_handle_,
                                     0);
-            if (TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskHandle != NULL) {
-                TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTask_exists = true;
-                TCP_TASK_HANDLE[TcpHandle_FatherTask_current].mode = ALL;
-                TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskPort = Parameter->port;
+            if (TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_handle_ != NULL) {
+                TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_exists_ = true;
+                TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].mode = TCP_ALL;
+                TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_task_port_ = parameter->port;
             }
-            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].FatherTaskcount = TcpHandle_FatherTask_current;
-            TcpHandle_FatherTask_current++;
+            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].father_taskcount_ = kTcpHandleFatherTaskCurrent;
+            kTcpHandleFatherTaskCurrent++;
             break;
         default:break;
     }
     return TCP_TASK_HANDLE;
 }
 
-uint8_t TcpTaskAllDelete(TcpTaskHandle_t *TCP_TASK_HANDLE_delete) {
+uint8_t TcpTaskAllDelete(TcpTaskHandleT *tcp_task_handle_delete) {
     unsigned int need_to_delete_taskcount = 0;
-    need_to_delete_taskcount = TcpHandle_FatherTask_current;
+    need_to_delete_taskcount = kTcpHandleFatherTaskCurrent;
     for (int i = 0; i <= need_to_delete_taskcount; i++) {
-        if ((TCP_TASK_HANDLE_delete[i].FatherTask_exists) == true) {
-            if (TCP_TASK_HANDLE_delete[i].SonTaskHandle != NULL) {
-                TCP_TASK_HANDLE_delete[i].SonTask_exists = false;
-                vTaskDelete(*(TCP_TASK_HANDLE_delete[i].SonTaskHandle));
+        if ((tcp_task_handle_delete[i].father_task_exists_) == true) {
+            if (tcp_task_handle_delete[i].son_task_handle_ != NULL) {
+                tcp_task_handle_delete[i].son_task_exists_ = false;
+                vTaskDelete(*(tcp_task_handle_delete[i].son_task_handle_));
 
             }
             netconn_delete(newconn_All);
             netconn_delete(conn_All);
-            vTaskDelete(*(TCP_TASK_HANDLE_delete[i].FatherTaskHandle));
+            vTaskDelete(*(tcp_task_handle_delete[i].father_task_handle_));
             printf("\nDelete%d\n",i);
-            TCP_TASK_HANDLE_delete[i].FatherTaskcount = 0;
-            TCP_TASK_HANDLE_delete[i].mode = 0;
-            TCP_TASK_HANDLE_delete[i].FatherTaskPort = 0;
-            TCP_TASK_HANDLE_delete[i].FatherTask_exists = false;
-            TcpHandle_FatherTask_current = 0;
+            tcp_task_handle_delete[i].father_taskcount_ = 0;
+            tcp_task_handle_delete[i].mode = 0;
+            tcp_task_handle_delete[i].father_task_port_ = 0;
+            tcp_task_handle_delete[i].father_task_exists_ = false;
+            kTcpHandleFatherTaskCurrent = 0;
         }
     }
 
@@ -323,19 +323,19 @@ uint8_t TcpTaskAllDelete(TcpTaskHandle_t *TCP_TASK_HANDLE_delete) {
 }
 
 ///
-/// \param Parameter
-void tcp_server_rev_and_send(TcpParam *Parameter) {
+/// \param parameter
+void TcpServerRevAndSend(TcpParam *parameter) {
 
     err_t err = 1;
     char tmp[16];
-    printf("tcp_tx_queue tx: %p\n", Parameter->tx_buff_queue);
+    printf("tcp_tx_queue tx: %p\n", parameter->tx_buff_queue_);
     /* Create a new connection identifier. */
-    create_tcp_server(Parameter->port, &conn_All);
+    CreateTcpServer(parameter->port, &conn_All);
 
-    SubParam.TcpParam = Parameter;
+    SubParam.tcp_param_ = parameter;
     SubParam.conn = &conn_All;
-    SubParam.newconn = &newconn_All;
-    SubParam.son_task_current = TcpHandle_FatherTask_current;
+    SubParam.newconn_ = &newconn_All;
+    SubParam.son_task_current_ = kTcpHandleFatherTaskCurrent;
 
     /* Tell connection to go into listening mode. */
     //netconn_listen(conn);
@@ -347,21 +347,21 @@ void tcp_server_rev_and_send(TcpParam *Parameter) {
 
         if (err == ERR_OK) {
 
-            if (!TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTask_exists) {
+            if (!TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].son_task_exists_) {
                 /*Create Receive Subtask*/
-                SubParam.newconn = &newconn_All;
-                sprintf(tmp, "tcp_subtask_%d", Parameter->port);
+                SubParam.newconn_ = &newconn_All;
+                sprintf(tmp, "tcp_subtask_%d", parameter->port);
                 printf("\n%s\n", tmp);
 
-                if (xTaskCreatePinnedToCore(tcp_server_subtask,
+                if (xTaskCreatePinnedToCore((TaskFunction_t) TcpServerSubtask,
                                             (const char *const) tmp,
                                             4096,
-                                             (&SubParam),
+                                            (&SubParam),
                                             14,
-                                            TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTaskHandle, 0) == pdPASS) {
-                    TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTask_exists = true;
-                    TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTaskcount++;
-                    //strcpy(TCP_TASK_HANDLE[TcpHandle_FatherTask_current].SonTaskname, tmp);
+                                            TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].son_task_handle_, 0) == pdPASS) {
+                    TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].son_task_exists_ = true;
+                    TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].son_taskcount_++;
+                    //strcpy(TCP_TASK_HANDLE[kTcpHandleFatherTaskCurrent].son_taskname_, tmp);
                 }
             }
             /*Create send buffer*/
@@ -373,38 +373,38 @@ void tcp_server_rev_and_send(TcpParam *Parameter) {
                 if (re_err == ERR_OK) {
                     do{
                         events tx_event_1;
-                        netbuf_data(buf, &data, &tx_event_1.buff_len);
-                        tx_event_1.buff = data;
+                        netbuf_data(buf, &data, &tx_event_1.buff_len_);
+                        tx_event_1.buff_ = data;
 //                        if (newconn_All->state != NETCONN_CLOSE) {
 //                            netbuf_delete(buf);
 //                            break;
 //                        }
-                        if (xQueueSend(*(Parameter->tx_buff_queue), &tx_event_1, pdMS_TO_TICKS(10)) == pdPASS) {
+                        if (xQueueSend(*(parameter->tx_buff_queue_), &tx_event_1, pdMS_TO_TICKS(10)) == pdPASS) {
 
                         }
                         else
-                            ESP_LOGE(TCP_TAG, "SEND TO QUEUE FAILD\n");
+                            ESP_LOGE(TCP_TAG, "TCP_SEND TO QUEUE FAILD\n");
 
                     }while ((netbuf_next(buf) >= 0));
                         netbuf_delete(buf);
 
                 } else if (re_err == ERR_CLSD) {
-                    ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", Parameter->port);
+                    ESP_LOGE(TCP_TAG, "DISCONNECT PORT:%d\n", parameter->port);
 
                 }
 
             }
 
-//            vTaskDelete(*TCP_TASK_HANDLE[TcpHandle.FatherTaskcount].SonTaskHandle);
+//            vTaskDelete(*TCP_TASK_HANDLE[TcpHandle.father_taskcount_].son_task_handle_);
 //            is_created_tasks = 0;
-//            netconn_close(newconn);
-//            netconn_delete(newconn);
+//            netconn_close(newconn_);
+//            netconn_delete(newconn_);
 //            netconn_listen(conn);
         }
     }
 }
 
-static err_t get_connect_state(struct netconn *conn) {
+static err_t GetConnectState(struct netconn *conn) {
     void *msg;
     err_t err;
     if (sys_arch_mbox_tryfetch(&conn->recvmbox, &msg) != SYS_MBOX_EMPTY) {

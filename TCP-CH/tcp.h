@@ -26,46 +26,46 @@ enum Port
 
 };
 
-enum tcp_mode {
-    SEND = 1,
-    RECEIVE,
-    ALL,
+enum TCPMode {
+    TCP_SEND = 1,
+    TCP_RECEIVE,
+    TCP_ALL,
 };
 
 typedef struct 
 {
-    QueueHandle_t* tx_buff_queue;
-    QueueHandle_t* rx_buff_queue;
-    enum tcp_mode mode;
+    QueueHandle_t* tx_buff_queue_;
+    QueueHandle_t* rx_buff_queue_;
+    enum TCPMode mode;
     enum Port port;
 }TcpParam;
 
 typedef struct 
 {
-    TcpParam* TcpParam;
+    TcpParam* tcp_param_;
     struct netconn **conn;
-    struct netconn **newconn;
-    uint8_t son_task_current;
+    struct netconn **newconn_;
+    uint8_t son_task_current_;
 }SubTcpParam;
 
 typedef struct 
 {
-    TaskHandle_t* FatherTaskHandle;
-    uint8_t FatherTaskcount;
-    enum Port FatherTaskPort;
-    TaskHandle_t* SonTaskHandle;
-    uint8_t SonTaskcount;
-    char SonTaskname[16];
-    bool FatherTask_exists;
-    bool SonTask_exists;
-    enum tcp_mode mode;
-}TcpTaskHandle_t;
+    TaskHandle_t* father_task_handle_;
+    uint8_t father_taskcount_;
+    enum Port father_task_port_;
+    TaskHandle_t* son_task_handle_;
+    uint8_t son_taskcount_;
+    char son_taskname_[16];
+    bool father_task_exists_;
+    bool son_task_exists_;
+    enum TCPMode mode;
+} TcpTaskHandleT;
 
-void tcp_send_server(TcpParam *Parameter);
-void tcp_rev_server(TcpParam *Parameter);
-void tcp_server_rev_and_send(TcpParam *Parameter);
-uint8_t create_tcp_server(uint16_t port, struct netconn **conn);
-uint8_t TcpTaskAllDelete(TcpTaskHandle_t* TCP_TASK_HANDLE_delete);
-TcpTaskHandle_t* TcpTaskCreate(TcpParam *Parameter);
-void tcp_server_subtask(SubTcpParam *Parameter);
+void TcpSendServer(TcpParam *parameter);
+void TcpRevServer(TcpParam *parameter);
+void TcpServerRevAndSend(TcpParam *parameter);
+uint8_t CreateTcpServer(uint16_t port, struct netconn **conn);
+uint8_t TcpTaskAllDelete(TcpTaskHandleT* tcp_task_handle_delete);
+TcpTaskHandleT* TcpTaskCreate(TcpParam *parameter);
+void TcpServerSubtask(SubTcpParam *parameter);
 #endif

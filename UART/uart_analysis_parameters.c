@@ -1,13 +1,13 @@
 #include "UART/uart_analysis_parameters.h"
 #include "cJSON.h"
-uart_init_t c1;
-uart_init_t c2;
-uart_init_t c3;
+UartInitT c1;
+UartInitT c2;
+UartInitT c3;
 
 bool c1UartConfigFlag = false; 
 bool c2UartConfigFlag = false;
-
-int uart_1_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
+//串口1接收到的字符解析并进行配置
+int Uart1ParameterAnalysis(void *attach_rx_buffer, UartInitT* uart_config) {
 
     cJSON *pu1 = cJSON_GetObjectItem(attach_rx_buffer, "u1"); // 解析c1字段内容
     printf("\nu1:\n");
@@ -16,41 +16,35 @@ int uart_1_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
          {
             cJSON * item;
 
-            uartconfig->pin.rx_pin=34;
-            uartconfig->pin.tx_pin=25;
-            uartconfig->mode = All;
+             uart_config->pin.rx_pin=34;
+             uart_config->pin.tx_pin=25;
+             uart_config->mode_ = UART_IO_MODE_ALL;
 
-            //uartconfig->uart_config.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
+            //uart_config_->uart_config_.flow_ctrl=UART_HW_FLOWCTRL_DISABLE;
 
-            uartconfig->uart_num = UART_NUM_1;
+            uart_config->uart_num = UART_NUM_1;
 
             item=cJSON_GetObjectItem(pu1,"mode");
-            uartconfig->mode = item->valueint;
-            printf("mode = %d\n",uartconfig->mode);
-            if(uartconfig->mode==1){
-                uartconfig->mode = All;
-            }else if(uartconfig->mode==2){
-                uartconfig->mode = All;
-                //Forward;
-            }else if(uartconfig->mode==0){
-                return 0;
-            }
+             uart_config->mode_ = item->valueint;
+            printf("mode = %d\n", uart_config->mode_);
+
+
 
             item=cJSON_GetObjectItem(pu1,"band");
-            uartconfig->uart_config.baud_rate = item->valueint;
-            printf("band = %d\n",uartconfig->uart_config.baud_rate);
+             uart_config->uart_config_.baud_rate = item->valueint;
+            printf("band = %d\n", uart_config->uart_config_.baud_rate);
 
             item=cJSON_GetObjectItem(pu1,"parity");
-            uartconfig->uart_config.parity = item->valueint;
-            printf("parity = %d\n",uartconfig->uart_config.parity);
+             uart_config->uart_config_.parity = item->valueint;
+            printf("parity = %d\n", uart_config->uart_config_.parity);
 
             item=cJSON_GetObjectItem(pu1,"data");
-            uartconfig->uart_config.data_bits = (item->valueint)-5;
-            printf("data = %d\n",uartconfig->uart_config.data_bits);
+             uart_config->uart_config_.data_bits = (item->valueint)-5;
+            printf("data = %d\n", uart_config->uart_config_.data_bits);
 
             item=cJSON_GetObjectItem(pu1,"stop");
-            uartconfig->uart_config.stop_bits=item->valueint;
-            printf("stop = %d\n",uartconfig->uart_config.stop_bits);
+             uart_config->uart_config_.stop_bits=item->valueint;
+            printf("stop = %d\n", uart_config->uart_config_.stop_bits);
 
             return 1;
          }
@@ -60,48 +54,53 @@ int uart_1_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
 
 
 
-int uart_2_parameter_analysis(void *attach_rx_buffer,uart_init_t* uartconfig) {
+int Uart2ParameterAnalysis(void *attach_rx_buffer, UartInitT* uart_config) {
     //首先整体判断是否为一个json格式的数据
-    cJSON *pu2 = cJSON_GetObjectItem(attach_rx_buffer, "u2"); // 解析c1字段内容
+    cJSON *pu2 = cJSON_GetObjectItem(attach_rx_buffer, "u2"); // 解析c2字段内容
     printf("\nu2:\n");
         //是否指令为空
         if (pu2 != NULL)
         {
             cJSON * item;
-
+            uart_config->pin.rx_pin=35;
+            uart_config->pin.tx_pin=26;
+            uart_config->uart_num = UART_NUM_2;
+            uart_config->mode_ = UART_IO_MODE_ALL;
             item=cJSON_GetObjectItem(pu2,"mode");
-            uartconfig->mode = item->valueint;
-            printf("mode = %d\n",uartconfig->mode); 
+            uart_config->mode_ = item->valueint;
+            printf("mode = %d\n", uart_config->mode_);
 
-            uartconfig->uart_num = UART_NUM_2;
-            
-            if(uartconfig->mode==1){
-                uartconfig->mode = All;
-            }else if(uartconfig->mode==2){
-                uartconfig->mode = All;
-            }else if(uartconfig->mode==0){
-                return 0;
-            }
-            
-            uartconfig->pin.rx_pin=35;
-            uartconfig->pin.tx_pin=26;
-            uartconfig->mode = All;
+
+
+//            switch (uart_config->mode_) {
+//                case Send:
+//                case Receive:
+//                    return 0;
+//                case Forward:
+//                case All:
+//                    uart_config->mode_ = All;
+//                    break;
+//                default:
+//                    return 0;
+  //          }
+
+
 
             item=cJSON_GetObjectItem(pu2,"band");
-            uartconfig->uart_config.baud_rate = item->valueint;
-            printf("band = %d\n",uartconfig->uart_config.baud_rate);
+            uart_config->uart_config_.baud_rate = item->valueint;
+            printf("band = %d\n", uart_config->uart_config_.baud_rate);
             
             item=cJSON_GetObjectItem(pu2,"parity");
-            uartconfig->uart_config.parity = item->valueint;
-            printf("parity = %d\n",uartconfig->uart_config.parity);
+            uart_config->uart_config_.parity = item->valueint;
+            printf("parity = %d\n", uart_config->uart_config_.parity);
             
             item=cJSON_GetObjectItem(pu2,"data");
-            uartconfig->uart_config.data_bits = (item->valueint)-5;
-            printf("data = %d\n",uartconfig->uart_config.data_bits);
+            uart_config->uart_config_.data_bits = (item->valueint)-5;
+            printf("data = %d\n", uart_config->uart_config_.data_bits);
             
             item=cJSON_GetObjectItem(pu2,"stop");
-            uartconfig->uart_config.stop_bits = item->valueint;
-            printf("stop = %d\n",uartconfig->uart_config.stop_bits);
+            uart_config->uart_config_.stop_bits = item->valueint;
+            printf("stop = %d\n", uart_config->uart_config_.stop_bits);
             
             
             return 1;
