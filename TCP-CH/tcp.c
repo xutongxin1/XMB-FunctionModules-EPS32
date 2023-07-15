@@ -6,7 +6,6 @@
 #include <sys/param.h>
 #include <stdatomic.h>
 
-#include "InstructionServer/wifi_configuration.h"
 #include "UART/uart_val.h"
 #include "TCP-CH/tcp.h"
 
@@ -16,7 +15,7 @@
 #include "freertos/queue.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "driver/uart.h"

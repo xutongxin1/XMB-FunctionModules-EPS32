@@ -1,5 +1,5 @@
-#include "Handle.h"
-#include "InstructionServer/wifi_configuration.h"
+#include "SwitchModeHandle.h"
+
 
 #include "UART/uart_analysis_parameters.h"
 #include "UART/uart_config.h"
@@ -8,10 +8,13 @@
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
+#include <esp_log.h>
 
 #include "TCP-CH/tcp.h"
+#include "WirelessDAP_main/DAP_handle.h"
+#include "WirelessDAP_main/dap_tcp_server.h"
 TcpParam tcp_param;
-bool uart_handle_flag = false;
+enum WorkMode working_mode = NONE_MODE;
 extern UartInitT c1;
 extern UartInitT c2;
 extern bool c1UartConfigFlag;
@@ -28,12 +31,22 @@ QueueHandle_t uart_queue1 = NULL;
 QueueHandle_t uart_queue = NULL;
 QueueHandle_t uart_queue2 = NULL;
 QueueHandle_t uart_queue3 = NULL;
+static const char *TAG = "ModeSwitcher";
+TaskHandle_t kDAPTaskHandle = NULL;
+void USBIP_server_task(void *pvParameters);
+void DAP_Thread(void *argument);
+void DAPHandle(void) {
+    ESP_LOGI(TAG, "Enter DAP Mode");
+    working_mode = DAP;
+    // USBIP的TCP服务器
+    xTaskCreatePinnedToCore(USBIP_server_task, "USBIP_server_task", 4096, NULL, 14, NULL, 1);
 
-
-void DAPHandle(void) {}
+    // DAP调试器的服务器
+    xTaskCreatePinnedToCore(DAP_Thread, "DAP_Task", 2048, NULL, 10, &kDAPTaskHandle, 2);
+}
 void UartHandle(void) {
-    printf("\nuart_handle_flag\n");
-    uart_handle_flag = true;
+    ESP_LOGI(TAG, "Enter Uart Mode");
+    working_mode = UART;
 }
 void ADCHandle(void) {}
 void DACHandle(void) {}

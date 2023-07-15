@@ -4,16 +4,19 @@
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
+#include "SwitchMode/SwitchModeHandle.h"
 #include <lwip/netdb.h>
+#include <esp_log.h>
 
+static const char *TAG = "NVS";
 
-int send_bytes;
 extern char modeRet[5];
-extern int kSock1 ;
-int Command_Flag = 0;               //指令模式
-int Start_Flag = 1; 
+extern int instrucion_kSock;
+
+char need_send_RF = 0;
+
 //写入flash
-void NvsFlashWrite(char mode_number) {
+void NVSFlashWrite(char mode_number) {
     // Initialize NVS
     nvs_flash_erase();
     esp_err_t err = nvs_flash_init();
@@ -31,9 +34,9 @@ void NvsFlashWrite(char mode_number) {
     nvs_handle_t my_handle;
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Error (%s) opening NVS handle!\n", esp_err_to_name(err));
     } else {
-        printf("openDone\n");
+        ESP_LOGI(TAG, "openDone");
 
         // Write
         // printf("Updating restart counter in NVS ... ");
@@ -62,7 +65,7 @@ void NvsFlashWrite(char mode_number) {
 }
 
 //读取flash内容
-int NvsFlashRead() {
+int NVSFlashRead() {
 
 
     // Initialize NVS
@@ -76,7 +79,6 @@ int NvsFlashRead() {
     ESP_ERROR_CHECK(err);
 
     // Open
-    printf("\nopen\n");
     // printf("Opening Non-Volatile Storage (NVS) handle... ");
     nvs_handle_t my_handle;
     err = nvs_open("storage", NVS_READONLY, &my_handle);
@@ -85,41 +87,36 @@ int NvsFlashRead() {
         //printf("\nDone\n");
 
         // Read
-        // printf("Reading restart counter from NVS ... ");
+        ESP_LOGI(TAG, "Reading restart counter from NVS ... ");
         char mode_number = 0; // value will default to 0, if not set yet in NVS
-        err = nvs_get_i32(my_handle, "mode_number", &mode_number);
+        err = nvs_get_i32(my_handle, "mode_number", (int32_t *) &mode_number);
 
         switch (err) {
             case ESP_OK:
                 // printf("Done\n");
-                printf("mode_number = %c\n", mode_number);
+                ESP_LOGI(TAG, "mode_number = %c", mode_number);
 
                 break;
-            case ESP_ERR_NVS_NOT_FOUND:printf("The value is not initialized yet!\n");
+            case ESP_ERR_NVS_NOT_FOUND:ESP_LOGW(TAG, "The value is not initialized yet!");
+                mode_number = 0;
                 break;
-            default:printf("Error (%s) reading!\n", esp_err_to_name(err));
+            default:ESP_LOGE(TAG, "Error (%s) reading!", esp_err_to_name(err));
+                return -1;
         }
         nvs_flash_erase();
         // Close
         nvs_close(my_handle);
         //printf("\nnvs_close\n");
 
-        Command_Flag = mode_number - '0';
-        printf("Command %d\n", Command_Flag);
 
-        if (Command_Flag != 0){
-            modeRet[2] = Command_Flag + '0';
-            do {
-                send_bytes = send(kSock1, modeRet, 5, 0);
+        ESP_LOGI(TAG, "Read mode %d", mode_number);
 
-                printf("\nsend RF%C finish%d\n", modeRet[2], send_bytes);
-
-            } while (send_bytes < 0);
-            Command_Flag = Command_Flag + '0';
-            //printf("\nRF send finish\n");
-            return 1;
+        if (mode_number != 0) {
+            modeRet[2] = mode_number + '0';
+            need_send_RF = 1;
         }
+        return mode_number;
     }
     nvs_close(my_handle);
-    return 0;
+    return -1;
 }

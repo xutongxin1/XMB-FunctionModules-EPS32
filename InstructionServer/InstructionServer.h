@@ -23,7 +23,7 @@
 // } ;
 
 //#include "UART/uart_config.h"
-#include "../wireless-esp8266-dap/WirelessDAP_main/usbip_server.h"
+//#include "../wireless-esp8266-dap/WirelessDAP_main/usbip_server.h"
 
 //enum StateT {
 //  ACCEPTING,
@@ -32,28 +32,12 @@
 //  EL_DATA_PHASE
 //};
 
-enum ResetHandleT
-{
-    NO_SIGNAL = 0,
-    RESET_HANDLE = 1,
-    DELETE_HANDLE = 2,
-};
 
-void TcpCommandPipeTask();
+void TCPInstructionTask();
 void HeartBeat(unsigned int len, char *rx_buffer);
 void CommandJsonAnalysis(unsigned int len, void *rx_buffer, int ksock);
-void AttachStatus(char str_attach);
+void ChangeWorkMode(char mode);
 
-enum CommandMode {
-  DAP = 1,
-  UART,
-  ADC,
-  DAC,
-  PWM_COLLECT,
-  PWM_SIMULATION,
-  I2C,
-  SPI,
-  CAN
-};
+
 
 #endif

@@ -5,8 +5,6 @@
 #include <sys/param.h>
 #include <stdatomic.h>
 
-#include "InstructionServer/wifi_configuration.h"
-
 #include "UART/uart_val.h"
 #include "UART/uart_config.h"
 
@@ -16,7 +14,7 @@
 #include "freertos/queue.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "driver/uart.h"
@@ -305,7 +303,7 @@ UartErrT Delete_All_Uart_Task() {
         j_max = uart_manage.task_handle_[i].task_num_;
         for (int j = 0; j < j_max; j++) {
             if (uart_manage.task_handle_[i].handle[j] != NULL) {
-                vTaskDelete(uart_manage.task_handle_[i].handle[j]);
+                vTaskDelete(*uart_manage.task_handle_[i].handle[j]);
                 uart_manage.task_num_--;
             }
         }
@@ -329,7 +327,7 @@ void UartSend(UartInitT *uart_config) {
 
 void UartRev(UartInitT *uart_config) {
     uart_port_t uart_num = uart_config->uart_num;
-    char buffer[UART_BUF_SIZE];
+//    char buffer[UART_BUF_SIZE];
     int uart_buf_len = 0;
     events event;
     while (1) {
